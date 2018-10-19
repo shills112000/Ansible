@@ -1,0 +1,37 @@
+TestDesc="Description This test verifies that UIDs 0 - 499 are reserved for system accounts."
+# Accounts with UIDs less than 500 should include users such as root, bin, rpc, etc.
+# Rules Non-System Accounts
+# Element Equals "Non-System Accounts"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ \t]*[
+# ^:]+:[^:]+:(?:\d|\d\d|[1-4]\d\d):/ (Flags:Multiline,Comments mode) Reserved System Account
+# UIDs Deviation Does not exist
+# Remediation To remediate failure of this policy test, update invalid UIDs (0 - 499) of non-system accounts.
+# Updating invalid UIDs (0 - 499) of non-system accounts:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# SYS_USER="\+|#.*|root|bin|daemon|adm|lp|sync|shutdown|halt|
+# mail|news|uucp|operator|games|gopher|ftp|nobody|nscd|vc
+# sa|rpc|mailnull|smmsp|pcap|ntp|dbus|avahi|sshd|rpcuser|nfs
+# nobody|haldaemon|avahi-autoipd|distcache|apache|oprofile|we
+# balizer|dovecot|squid|named|xfs|gdm|sabayon|abrt|doven
+# ull|mysql|pegasus|postfix|postgres|pulse|qpidd|rtkit|saslauth|tcp
+# dump|tomcat|usbmuxd|exim"; /bin/cat /etc/passwd 2>/dev/null 2>/
+# dev/null | /bin/egrep -v "^[[:space:]]*($SYS_USER):" | /bin/sort -u
+# | /bin/awk -F":" '0+$3 < 500 {print $1}'
+# to list invalid accounts.
+# 3. With invalid accounts found, run the usermod -u <id_number> <account_name>
+# command to update UIDs of them to be valid (greater than 499).
+# For further details, please run the command man usermod to read man page.
+SYS_USER="\+|#.*|root|bin|daemon|adm|lp|sync|shutdown|halt|mail|news|uucp|operator|games|gopher|ftp|nobody|nscd|vcsa|rpc|mailnull|smmsp|pcap|ntp|dbus|avahi|sshd|rpcuser|nfsnobody|haldaemon|avahi-autoipd|distcache|apache|oprofile|webalizer|dovecot|squid|named|xfs|gdm|sabayon|abrt|dovenull|mysql|pegasus|postfix|postgres|pulse|qpidd|rtkit|saslauth|tcpdump|tomcat|usbmuxd|exim"
+export SYS_USER
+ZERONUM=0
+ZEROUSR=""
+for ZEROUSR in `/bin/egrep -v "^[ ]*($SYS_USER):" /etc/passwd |/bin/awk -F":" ' $3 < 500 {print $1}'`
+do
+        echo "Failure $ZEROUSR has a UID less than 500"
+        ZERONUM=`expr $ZERONUM + 1`
+done
+if [ $ZERONUM -lt 1 ]; then
+	echo "Everything ok - no UIDS are less than 500 for non system accounts"
+fi
+exit $ZERONUM

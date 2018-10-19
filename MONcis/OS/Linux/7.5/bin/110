@@ -1,0 +1,25 @@
+TestDesc="Status Severity Time Verify That There Are No Accounts with Empty Password Fields No Results 0"
+# Description This test determines if any individual accounts listed in /etc/shadow have empty passwords.
+# All accounts should have strong passwords or the account should be locked.
+# Rules System Configuration Files
+# Element Equals "/etc/shadow"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[^:\#]+::/
+# (Flags:Multiline,Case insensitive,Comments mode) Empty Password Accounts Does not exist
+# Remediation To remediate failure of this policy test, set the passwords or lock the accounts.
+# Setting the passwords or locking the accounts:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the awk -F: '($2 == "") { print $1 }' /etc/shadow command to print the accounts
+# with empty passwords.
+# 3. Run the passwd <user_name> command to set the password or run the passwd
+# <user_name> -l command to lock the account.
+# For further details, please run the command man 5 shadow to read man page.
+if [ `awk -F: '($2 == "") { print $1 }' /etc/shadow |wc -l ` -ne 0 ]; then
+	echo "Failure - some accounts have empty passwords"
+	echo ""
+	awk -F: '($2 == "") { print $1 }' /etc/shadow
+	echo "please rectify the accounts above"
+	exit $?
+else
+	echo "Everthing ok - no accounts found with Null passowrds"
+	exit 0
+fi

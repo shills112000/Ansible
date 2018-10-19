@@ -1,0 +1,28 @@
+TestDesc="Status Severity Time Verify /etc/cron.daily Permissions No Results 0"
+# Description The /etc/cron.daily directory contains system cron jobs that need to run on a daily basis. The
+# files in this directory cannot be manipulated by the crontab command, but are instead edit
+# ed by system administrators using a text editor. The commands below restrict read/write and
+# search access to user and group root, preventing regular users from accessing this directory.
+# Rules System Configuration Files
+# Element Equals "/etc/cron.daily"
+# Version conditions Action if missing:Pass User Matches "^root[\ \t]+\(\d+\)[\ \t]*$" AND Group Matches "^root[\
+# \t]+\(\d+\)[\ \t]*$" AND Permissions Matches "^d.{3}-{6}.*$"
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the /etc/
+# cron.daily directory.
+# Setting appropriate permissions and ownership on the /etc/cron.daily directory:
+# 1. Become superuser or assume an equivalent role.
+# 2. Check the permissions and ownership of the file using the ls -ld /etc/cron.daily com
+# mand.
+# 3. Change permissions to 700 or more restrictive using the chmod go-rwx /etc/cron.
+# daily command.
+# 4. Change ownership to root:root using the chown root:root /etc/cron.daily com
+# mand.
+if [ `ls -ld /etc/cron.daily|sed -n -e '/^d.\{3\}-\{6\}\.[\ \t].*.[\ \t]root[\ \t]\+root[\ \t]\+[0-9]\+.*$/p'|wc -l` -eq 1 ]; then
+        echo "Everything ok - Perms, owner and group are set correct for /etc/cron.daily"
+        exit 0
+else
+        echo "Failure - Perms, owner and group are incorrect for /etc/cron.daily please rectify"
+        echo "chmod u-x,go-rwx /etc/cron.daily "
+        echo "chown root:root /etc/cron.daily"
+        echo $?
+fi

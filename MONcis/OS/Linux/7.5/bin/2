@@ -1,0 +1,32 @@
+TestDesc="Status Severity Time Find All Unowned Directories and Files"
+# Description This test checks for the presence of unowned directories and files on the file system.
+# Any unowned directories and files found on the file system should be carefully reviewed by
+# the system administrator. Unowned directories and files may be an indication of unauthorized
+# system access or improper package maintenance/installation.
+# Rules Find All Unowned Files
+# Element Equals "Unowned Files"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /.+/
+# (Flags:Case insensitive) Unowned Files Does not exist
+# Remediation To remediate failure of this policy test, set appropriate ownership on the directories and un
+# owned files.
+# Setting appropriate ownership on the directories and unowned files:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# PARTs=`/bin/df --local -P 2>/dev/null | /bin/egrep -v "/dev/sr0" | /
+# bin/awk 'NR != 1 {$1="";$2="";$3="";$4="";$5="";gsub("^[[:spac
+# e:]]+/","/",$0);print $0}' 2>/dev/null`; SaveIFS=$IFS;IFS=`/bin/echo
+# -e "\n\b"`; for PART in $PARTs; do /usr/bin/find "$PART" -xdev \( -
+# nouser -o -nogroup \) -print 2>/dev/null; done; IFS=$SaveIFS
+# to list all directories and unowned files.
+# 3. Check the ownership of the above directories and files using the /bin/ls -ldL <file
+# _location> command.
+# 4. Change ownership using the /bin/chown <user_owner>:<group_owner> <file
+# _location> command if needed.
+#!/bin/bash
+echo " Please review the following  All Unowned Directories and Files"
+PARTs=`/bin/df --local -P 2>/dev/null | /bin/egrep -v "/dev/sr0" | /bin/awk 'NR != 1 {$1="";$2="";$3="";$4="";$5="";gsub("^[[:space:]]+/","/",$0);print $0}' 2>/dev/null`; 
+SaveIFS=$IFS;IFS=`/bin/echo -e "\n\b"`; 
+for PART in $PARTs; do 
+    /usr/bin/find "$PART" -xdev \( -nouser -o -nogroup \) -print 2>/dev/null; 
+done; 
+IFS=$SaveIFS

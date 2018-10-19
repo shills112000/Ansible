@@ -1,0 +1,29 @@
+TestDesc="Status Severity Time Verify That User Accounts Are Locked Out after 35 Days of Inactivity No Results 0"
+# Description This test verifies that user accounts are locked out after 35 days of inactivity. Inactive ac
+# counts pose a threat to system security since the users are not logging in to notice failed login
+# attempts or other anomalies.
+# Rules System Configuration Files
+# Element Equals "/etc/default/useradd"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^INAC
+# TIVE=[\ \t]*(-?\d+)$/ (Flags:Multiline,Comments mode) INACTIVE Setting Less than or equal
+# 35 AND INACTIVE Setting Greater than or equal 0
+# Remediation To remediate failure of this policy test, set the INACTIVE parameter to 35 or less but no less
+# than 0.
+# Setting the INACTIVE parameter to 35 or less but no less than 0:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the useradd -D -f <value> command to set the INACTIVE parameter where
+# <value> is less than or equal to 35 and greater than or equal to 0.
+# For further details, please run the command man useradd to read man page.
+#USRADDVAL=0
+#USRADDVAL=`/usr/bin/sed -n -e '/\(^INACTIVE=\)\([-]*[0-9]\+\)\(.*\)/s//\2/p' 
+#/etc/default/useradd`
+# if [ ${USRADDVAL} -ge 0 -a ${USRADDVAL} -le 90 ]; then
+#	echo "everything ok - INACTIVE has a valid entry"
+#	exit 0
+#else
+#	echo "Failure - INACTIVE setting in /etc/default/useradd is not valid or default"
+#	echo "Set the INACTIVE parameter to 90 or less but no less than 0"
+#	echo "useradd -D -f value command to set the INACTIVE parameter"
+#	exit $?
+#fi
+echo "script not needed"

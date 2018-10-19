@@ -1,0 +1,23 @@
+TestDesc="Status Severity Time Verify That the tftp Package Is Removed No Results 0"
+# Description Trivial File Transfer Protocol (TFTP) is a simple file transfer protocol, typically used to auto
+# matically transfer configuration or boot files between machines. TFTP does not support au
+# thentication and can be easily hacked. The package tftp is a client program that allows for
+# connections to a tftp server. It is recommended that TFTP be removed, unless there is a spe
+# cific need for TFTP (such as a boot server).
+# Rules List of Installed Packages
+# Element Equals "installed packages"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*t
+# ftp-\d.*$/ (Flags:Multiline,Comments mode) tftp Package Does not exist
+# Remediation To remediate failure of this policy test, erase tftp package.
+# Erasing tftp package:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the yum erase tftp command to remove tftp package.
+# For further details, please run the command man yum to read man page.
+if [ `/usr/bin/rpm -qa| /usr/bin/sed -n -e '/^[\ \t]*tftp-[0-9].*$/p'|wc -l` -gt 0 ];  then
+        echo "tftp found removing package"
+        /usr/bin/yum erase tftp
+        exit $?
+else
+        echo "everything is Ok - no tftp package found"
+        exit 0
+fi

@@ -1,0 +1,59 @@
+TestDesc=" Verify That PermitUserEnvironment Option Is Set to no"
+# No Results 0
+# Description The PermitUserEnvironment option allows users to present environment options to the ssh
+# daemon.
+# Permitting users the ability to set environment variables through the SSH daemon could po
+# tentially allow users to bypass security controls (e.g. setting an execution path that has ssh
+# executing trojan programs)
+# Rules System Configuration Files
+# Element Equals "/etc/ssh/sshd_config"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*P
+# ermitUserEnvironment[\ \t]+(\S+)[\ \t]*$/ (Flags:Multiline,Case insensitive,Comments mode)
+# PermitUserEnvironment Not equal "yes"
+# Remediation To remediate failure of this policy test, configure the SSH server to disable environment pro
+# cessing.
+# Configuring the SSH server to disable environment processing:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/ssh/sshd_config file.
+# 3. Find the line PermitUserEnvironment <value>.
+# 4. Set <value> to no and save the file.
+# 5. Run the service sshd restart command to restart the sshd service.
+# For further details, please run the command man sshd_config to read man page.
+#!/bin/bash
+# initialize Variables
+FileName="/etc/ssh/sshd_config"
+ Line="PermitUserEnvironment no"
+ # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+   fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+/bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+ # Issue the command to add line to the file
+sed -i 's/PermitUserEnvironment/#PermitUserEnvironment/g' "$FileName"
+ AddLog=`(/bin/echo "$Line" >> $FileName) 2>&1`
+ if [ -n "$AddLog" ]; then
+    /bin/echo "FAILURE-6001: Could not add [$Line] line to [$FileName] file"
+    exit 6001
+ fi
+ /bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+ /bin/echo "Restarting sshd service"
+/sbin/service sshd restart
+ exit 0
+

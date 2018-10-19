@@ -1,0 +1,28 @@
+TestDesc="Status Severity Time Verify That the echo-dgram Service Is Disabled No Results 0"
+# Description echo-dgram is a network service that responds to clients with the data sent to it by the client.
+# This service is intended for debugging and testing purposes. It is recommended that this ser
+# vice be disabled.
+# Rules Service Status
+# Element Equals "service status"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ \t]*e
+# cho-dgram:[\ \t]+(.*)$/ (Flags:Multiline,Comments mode) echo-dgram Excludes "on"
+# Remediation To remediate failure of this policy test, disable the echo-dgram service.
+# Disabling the echo-dgram service:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the chkconfig --list echo-dgram command to check the status of the service.
+# 3. Disable the echo-dgram service using the chkconfig echo-dgram off command.
+# 4. Run the /sbin/service xinetd restart command to restart xinetd service.
+# For further details, please run the command man chkconfig to read man page.
+if [ `chkconfig --list echo-dgram | sed -n -e '/^[\ \t]*echo-dgram.*[\ \t]\([0-6]:on\+\)/p' | wc -l` -eq 1 ]; then
+	echo "Failure - echo-dgram is connfigured to startup"
+	echo "/usr/sbin/chkconfig echo-dgram off"
+	err=$?
+	if [ $err -ne 0 ]; then
+		exit $err
+	fi
+	echo "/sbin/service xinetd restart"
+	exit $?
+else
+	echo "everything is ok - echo-dgram not configured to startup from chkconfig --list command"
+	exit 0
+fi

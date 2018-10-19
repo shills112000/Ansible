@@ -1,0 +1,8 @@
+[master]
+172.31.15.235 ansible_connection=local
+
+[ansible_prod]
+172.31.14.18
+
+[loadbalancer]
+172.31.16.95

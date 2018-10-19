@@ -1,0 +1,29 @@
+TestDesc="Status Severity Time Verify That wheel Is a Group of root and Other Users"
+# Description This test checks 'wheel' is a group of root and users in /etc/group.
+# The su command allows a user to run a command or shell as another user. The program has
+# been superseded by sudo, which allows for more granular control over privileged access. Nor
+# mally, the su command can be executed by any user. By uncommenting the pam_wheel.so
+# statement in /etc/pam.d/su, the su command will only allow users in the wheel group to exe
+# cute su.
+# Rules System Configuration Files
+# Element Equals "/etc/group"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*w
+# heel:[^:]+:\d+:(\S+)$/ (Flags:Multiline,Comments mode) wheel Group List Matches "^.*\broo
+# t\b.*$"
+# Remediation To remediate failure of this policy test, add root user to the wheel group.
+# Adding root user and other users to the wheel group:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the usermod -a -G wheel <user name> command to add users to the wheel
+# group, where <user name> is user which are needed to run using su command( us
+# er root is required to add).
+# For further details, please refer to:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/4/html/Security_Guide/s2-
+# wstation-privileges-limitroot.html
+if [ `sed -n -e '/^wheel:.*:[0-9]\+:.*root.*$/p' /etc/group |wc -l ` -gt 0 ]; then
+	echo "Everything ok - root is in wheel group"
+	exit 0
+else
+	echo "Failure - root not in wheel group"
+	echo "please add root and other required users to wheel group"
+	echo $?
+fi

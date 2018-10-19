@@ -1,0 +1,27 @@
+TestDesc="Status Severity Time Verify That a /var/log Partition Is in the /etc/fstab File No Results 0"
+# Description The /var/log directory is used by system services to store log data. There are two important
+# reasons to ensure that system logs are stored on a separate partition: protection against re
+# source exhaustion (since logs can grow quite large) and protection of audit data.
+# Rules System Configuration Files
+# Element Equals "/etc/fstab"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[^\#\n]*[\
+# \t]+/var/log[\ \t]+.*$/ (Flags:Multiline,Comments mode) /var/log Entry Exists
+# Remediation To remediate failure of this policy test, create a separate partition for /var/log.
+# Creating a separate partition for /var/log:
+# 1. For new installations, check the box to "Review and modify partitioning" and create
+# a separate partition for /var/log.
+# 2. For systems that were previously installed, use the Logical Volume Manager (LVM)
+# to create partitions.
+# For further details, see the guidance on the Logical Volume Manager (LVM) for more informa
+# tion on repartitioning filesystems:
+# http://tldp.org/HOWTO/LVM-HOWTO/
+if [ `sed -n -e '/^\/.*.[\ \t]\/var\/log[\ \t]\+.*$/p' /etc/fstab| wc -l` -gt 0 ]; then
+        echo "everything ok - /var/log appears to be on its own filesystem"
+        exit 0
+else
+        echo "Failure - /var/log is not on its own filesystem"
+        echo "For systems that were previously installed, use the Logical Volume Manager (LVM)"
+        echo " For further details, see the guidance on the Logical Volume Manager (LVM) for more information on repartitioning filesystems:"
+        echo " http://tldp.org/HOWTO/LVM-HOWTO/"
+        exit $?
+fi

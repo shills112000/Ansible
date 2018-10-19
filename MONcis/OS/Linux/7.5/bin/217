@@ -1,0 +1,67 @@
+TestDesc="Verify That "restrict -6 default" Is Configured with Correct Parameters"
+# with Correct Parameters
+# No Results 0
+# Description The Network Time Protocol (NTP) is designed to synchronize system clocks across a variety
+# of systems and use a source that is highly accurate. It is recommended that physical systems
+# and virtual guests lacking direct access to the physical host's clock be configured as NTP
+# clients to synchronize their clocks (especially to support time sensitive security mechanisms
+# like Kerberos). This also ensures log files have consistent time records across the enterprise,
+# which aids in forensic investigations.
+# Rules System Configuration Files
+# Element Equals "/etc/ntp.conf"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*r
+# estrict[\ \t]+-6\b[\ \t]+default\b(?=.*[\ \t]kod\b)(?=.*[\ \t]nomodify\b)(?=.*[\ \t]notrap\b)(?=.*[\ \t]no
+# peer\b)(?=.*[\ \t]noquery\b).*$/ (Flags:Multiline,Comments mode) restrict -6 default Exists
+# Remediation To remediate the failure of this policy test, set correct parameters to restrict -6 default to pre
+# vent clients from accessing to the physical host's clock
+# Set correct parameters to restrict -6 default
+# 1. Become a superuser or assume an equivalent role
+# 2. Open /etc/ntp.conf file
+# 3. Find the line that contains restrict -6 default entry
+# 4. Uncomment and change it to restrict -6 default kod nomodify nopeer notrap no
+# query or add if not found
+# 5. Save and close the file
+# For more information, please refer to:
+# https://support.ntp.org/bin/view/Support/AccessRestrictions
+#!/bin/bash
+# initialize Variables
+FileName="/etc/ntp.conf"
+#FileName="test.txt"
+TempFile="sshd_conf_tmp"
+Line="restrict -6 default kod nomodify nopeer notrap noquery"
+sline="restrict -6 default kod nomodify nopeer notrap noquery"
+Linec=`cat -n $FileName | grep "$sline" | awk '{print $1}'`
+Linec=$(( $Linec +0 ))
+Line2=`cat -n $FileName | grep "$sline"`
+# # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+if [ -e "$Line2" ]; then
+   sed -e ''$Linec's/$/\n restrict -6 default kod nomodify nopeer notrap noquery/' "$FileName" > "$TempFile"
+   sed -i 's/ restrict -6 default kod nomodify nopeer notrap noquery/restrict -6 default kod nomodify nopeer notrap noquery/g' "$TempFile"
+   /bin/cp -f "$TempFile" "$FileName" 2>&1
+else
+   echo "$Line" >> "$FileName"
+fi
+   /bin/echo "SUCCESS-6003: [$Line] line updated in [$FileName] file"
+exit 6003
+

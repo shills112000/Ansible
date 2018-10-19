@@ -1,0 +1,43 @@
+TestDesc="Verify That All Groups Defined in the /etc/passwd File Are Defined in the /etc/group File"
+# No Results 0
+# Description Over time, system administration errors and changes can lead to groups being defined in /etc/
+# passwd but not in /etc/group.
+# Groups defined in the /etc/passwd file but not in the /etc/group file pose a threat to system se
+# curity since group permissions are not properly managed.
+# Rules Get Undefined Groups
+# Element Equals "Undefined Groups"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /.+/
+# (Flags:Multiline,Case insensitive,Comments mode) Undefined Groups Does not exist
+# Remediation To remediate failure of this policy test, add undefined group to the /etc/group file.
+# Adding undefined group to the /etc/group file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# /bin/awk -F: '$0 !~ /^[[:space:]]*(#|$|(root|bin|daemon|adm|lp|sync|
+# shutdown|halt|mail|news|uucp|operator|games|gopher|ftp|no
+# body|nscd|vcsa|rpc|mailnull|smmsp|pcap|ntp|dbus|avahi|sshd|
+# rpcuser|nfsnobody|haldaemon|avahi-autoipd|distcache|apach
+# e|oprofile|webalizer|dovecot|squid|named|xfs|gdm|sabayon):)/
+# {print $1, $4}' /etc/passwd 2>/dev/null | while read User Group; do
+# isDefined=`/bin/egrep "^[^:]+:[^:]*:$Group:" /etc/group 2>/dev/null
+# | /bin/egrep -v "^[[:space:]]*(#|:)"`; if [ -z "$isDefined" -o -z "$Gro
+# up" ]; then /bin/echo "$User:$Group"; fi; done
+# to list undefined groups.
+# 3. Run the groupadd -g <gid> <group_name> command to create undefined group
+# s found in step 2, where <gid> is gid of undefined groups found in step 2, <grou
+# p_name> is an optional name.
+# For further details, please run the command man groupadd to read man page.
+#!/bin/bash
+SUCCESS="0"
+/bin/awk -F: '$0 !~ /^[[:space:]]*(#|$|(root|bin|daemon|adm|lp|sync|shutdown|halt|mail|news|uucp|operator|games|gopher|ftp|nobody|nscd|vcsa|rpc|mailnull|smmsp|pcap|ntp|dbus|avahi|sshd|rpcuser|nfsnobody|haldaemon|avahi-autoipd|distcache|apache|oprofile|webalizer|dovecot|squid|named|xfs|gdm|sabayon):) {print $1, $4}' /etc/passwd 2>/dev/null | while read User Group; do
+ isDefined=`/bin/egrep "^[^:]+:[^:]*:$Group:" /etc/group 2>/dev/null | /bin/egrep -v "^[[:space:]]*(#|:)"`; 
+   if [ -z "$isDefined" -o -z "$Group" ]; then 
+      /bin/echo "$User:$Group";
+      SUCCESS="1" 
+   fi; 
+done
+if [ "$SUCCESS" = "0" ]; then
+   echo "All groups are defined in passwd are defined in the group file"
+else
+   echo "Please review the list above and run the following command  groupadd -g <gid> <group_name> command to create undefined groups found, where <gid> is gid of undefined groups found" 
+fi
+exit 

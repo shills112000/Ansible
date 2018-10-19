@@ -1,0 +1,44 @@
+TestDesc="Status Severity Time User Home Directories Should Be Mode 750 or More Restrictive No Results 0"
+# Description This test verifies that user home directories are not group-writable and only members of the
+# same group have read and execute access.
+# This reduces the risk posed by malicious users and allows for users to define access control
+# at their discretion. Carefully consider the impact that any configuration changes to home direc
+# tory permissions will have in your environment.
+# Rules User Home Directories Permissions
+# Element Equals "User Home Directories Permissions"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ \t]*d
+# (?!.{4}-.-{3})\S+[\ \t]+.*$/ (Flags:Multiline,Comments mode) Home Directory Permissions Devi
+# ation Does not exist
+# Remediation To remediate failure of this policy test, set appropriate permissions on user home directories.
+# Setting appropriate permissions on user home directories:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# Users=`/bin/cat /etc/shadow 2>/dev/null | /bin/sort -u | /bin/egrep
+# -v "^[[:space:]]*(#.*|\+.*|root|halt|sync|shutdown):" | /bin/awk -
+# F: '$2 !~ /^(\*|\!|\!\!|\!\*)$/ {print $1}'`; for User in $Users; do User
+# Home=`/bin/awk -F: '$1 ~ /^'$User'$/ && $7 != "/sbin/nologin" {p
+# rint $6}' /etc/passwd`; if [ "$UserHome" != "/" ]; then /bin/ls -ldL
+# "$UserHome" 2>/dev/null | /bin/awk '$1 !~ /d....-.---/ {print $1,$NF}';
+# fi; done;
+# to list user home directories which have inappropriate permissions.
+# 3. Set permissions on user home directories found in step 2 to 750 or more restrictive
+# using the chmod g-w,o-rwx <user_home_directory> command.
+# For further details, please refer to:
+# http://www.redhat.com/mirrors/LDP/LDP/GNU-Linux-Tools-Summary/html/file-permission
+# s.html
+ZERONUM=0
+ZEROUSR=""
+export ZERONUM  ZEROUSR
+for i in `grep -v /sbin/nologin /etc/passwd| /bin/egrep -v "^[[:space:]]*(#.*|\+.*|root|halt|sync|shutdown):" | /bin/awk -F: '{print $6}'`
+do
+        if [ `/bin/ls -ldL $i |sed -n -e '/^d.\{4\}-.-\{3\}/p' | wc -l ` -ne 1 ]; then
+                echo "Failure on Directory $i permissions"
+                ZERONUM=`expr $ZERONUM + 1`
+        else
+                echo "Everything ok with perms on Directory $i"
+        fi
+done
+if [ $ZERONUM -lt 1 ]; then
+        echo "Everything ok - no Directories found with incorrect permissions"
+fi
+exit $ZERONUM

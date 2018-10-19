@@ -1,0 +1,27 @@
+TestDesc="Status Severity Time Verify /boot/grub2/grub.cfg Permissions"
+# Description This test verifies that the 'root' user and 'root' group owns /boot/grub2/grub.cfg and permis
+# sions are equal to 700 or more restrictive.
+# To help protect the GRUB configuration from unauthorized changes, only the 'root' user shoul
+# d have read and write access to the grub.conf file.
+# Rules System Configuration Files
+# Element Equals "/boot/grub2/grub.cfg"
+# Version conditions Action if missing:Pass User Matches "^root[\ \t]+\(\d+\)[\ \t]*$" AND Group Matches "^root[\
+# \t]+\(\d+\)[\ \t]*$" AND Permissions Matches "^-.{3}-{6}.*$"
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the /
+# boot/grub2/grub.cfg file.
+# Setting appropriate permissions and ownership on the /boot/grub2/grub.cfg file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Check the permissions and ownership of the file using the /bin/ls -ldL /boot/grub2
+# /grub.cfg command.
+# 3. Change permissions to 700 or more restrictive using the /bin/chmod go-rwx /boot/
+# grub2/grub.cfg command.
+# 4. Change ownership using the /bin/chown root:root /boot/grub2/grub.cfg command.
+if [ `ls -lL /boot/grub2/grub.cfg|sed -n -e '/^-.\{2\}-\{7\}\.[\ \t].*.[\ \t]root[\ \t]\+root[\ \t]\+[0-9]\+.*$/p'|wc -l` -eq 1 ]; then
+        echo "Everything ok - Perms, owner and group are set correct for /boot/grub2/grub.cfg"
+        exit 0
+else
+        echo "Failure - Perms, owner and group are incorrect for /boot/grub2/grub.cfg please rectify"
+        echo "chmod go-rwx /boot/grub2/grub.cfg "
+        echo "chown root:root /boot/grub2/grub.cfg"
+        echo $?
+fi

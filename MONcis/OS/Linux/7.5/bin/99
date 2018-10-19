@@ -1,0 +1,22 @@
+TestDesc="Status Severity Time Verify That Password Hashing Algorithm Is Upgraded to SHA-512 No Results 0"
+# Description The SHA-512 encryption has been available since Red Hat release 5.2,. The commands be
+# low change password encryption from md5 to sha512 ( a much stronger hashing algorithm).
+# All existing accounts will need to perform a password change to upgrade the stored hashes to
+# the new algorithm.
+# Rules System Configuration Files
+# Element Equals "/etc/sysconfig/authconfig"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^PASS
+# WDALGORITHM=sha512[\ \t]*$/ (Flags:Multiline,Comments mode) PASSWDALGORITHM
+# Setting Exists
+# Remediation To remediate failure of this policy test, upgrading password hashing algorithm to SHA-512.
+# Upgrading password hashing algorithm to SHA-512:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the authconfig --passalgo=sha512 --update command to upgrade password
+# hashing algorithm to SHA-512.
+# 3. Run the following command to force users to change their passwords on next login:
+# awk -F: '(0+$3 >=500 && $1 != "nfsnobody" ) { print $1 }' /etc/pass
+# wd | xargs -n 1 chage -d 0
+# For further details, please run the command man authconfig to read man page.
+#!/bin/bash
+echo "FAILURE : Not implemented due to Monitise Ploicy"
+exit 

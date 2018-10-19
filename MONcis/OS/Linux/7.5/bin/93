@@ -1,0 +1,28 @@
+TestDesc="Status Severity Time Verify That GUI Login Is Disabled No Results 0"
+# Description This test verifies that the GUI login is disabled. Systems configured for GUI login run at runlevel
+# 5. Disabling the GUI login causes the system to run at run-level 3, which is more desir
+# able than running at run-level 5.
+# Rules Get Default Target Information
+# Element Equals "Get Default Target Information"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*g
+# raphical\.target[\ \t]*$/ (Flags:Multiline,Case insensitive,Comments mode) Default Target Unit
+# Does not exist
+# Remediation To remediate failure of this policy test, change the default runlevel to multi user without X.
+# Changing the default runlevel to multi user without X:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the rm -f '/etc/systemd/system/default.target' command to remove the default
+# target.
+# 3. Change the default target to multi-user using the ln -s '/usr/lib/systemd/system/mul
+# ti-user.target' '/etc/systemd/system/default.target' command.
+# For further details, please refer to:
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Syste
+# m_Administrators_Guide/sect-Managing_Services_with_systemd-Targets.html
+if [ `sed -n -e '/.*graphical.target[\ \t]*$/p' /etc/systemd/system/default.target | wc -l` -gt 0 ]; then
+	echo "Failure - Graphical interface is setup to start in multi user run levels"
+	echo "Run the rm -f '/etc/systemd/system/default.target' command to remove the default target."
+	echo "Change the default target to multi-user using the ln -s '/usr/lib/systemd/system/multi-user.target' '/etc/systemd/system/default.target' command."
+	echo $?
+else
+	echo "Everything ok - graphical interface not set up "
+	exit 0
+fi

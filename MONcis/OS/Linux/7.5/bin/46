@@ -1,0 +1,26 @@
+TestDesc="Status Severity Time Verify /etc/crontab Permissions No Results 0"
+# Description The /etc/crontab file is used by cron to control its own jobs. The commands in this item make
+# here sure that root is the user and group owner of the file and is the only user that can read
+# and write the file.
+# Rules System Configuration Files
+# Element Equals "/etc/crontab"
+# Version conditions Action if missing:Pass User Matches "^root[\ \t]+\(\d+\)[\ \t]*$" AND Group Matches "^root[\
+# \t]+\(\d+\)[\ \t]*$" AND Permissions Matches "^-.{3}-{6}.*$"
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the /etc/
+# crontab file.
+# Setting appropriate permissions and ownership on the /etc/crontab file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Check the permissions and ownership of the file using the ls -lL /etc/crontab com
+# mand.
+# 3. Change permissions to 700 or more restrictive using the chmod go-rwx /etc/crontab
+# command.
+# 4. Change ownership to root:root using the chown root:root /etc/crontab command.
+if [ `ls -lL /etc/crontab|sed -n -e '/^-.\{3\}-\{6\}\.[\ \t].*.[\ \t]root[\ \t]\+root[\ \t]\+[0-9]\+.*$/p'|wc -l` -eq 1 ]; then
+        echo "Everything ok - Perms, owner and group are set correct for /etc/crontab"
+        exit 0
+else
+        echo "Failure - Perms, owner and group are incorrect for /etc/crontab please rectify"
+        echo "chmod go-rwx /etc/crontab "
+        echo "chown root:root /etc/crontab"
+        echo $?
+fi

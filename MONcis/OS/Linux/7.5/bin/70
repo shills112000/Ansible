@@ -1,0 +1,32 @@
+TestDesc="Status Severity Time Verify That 'noexec' Option Is Added to /tmp Partition in the /etc/fstab File"
+# No Results 0
+# Description The noexec mount option specifies that the filesystem cannot contain executable binaries.
+# Since the /tmp filesystem is only intended for temporary file storage, set this option to ensure
+# that users cannot run executable binaries from /tmp.
+# Rules System Configuration Files
+# Element Equals "/etc/fstab"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*[
+# ^\#&&\S]+[\ \t]+/tmp[\ \t]+[^\#&&\S]+[\ \t]+[^\#&&\S]*\bnoexec\b.*$/ (Flags:Multiline,Comments
+# mode) /tmp with noexec Option Exists
+# Remediation To remediate failure of this policy test, set noexec option for /tmp partition.
+# Set noexec option for /tmp partition:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/fstab file.
+# 3. Find the line with options for /tmp.
+# 4. If not found, use the Logical Volume Manager (LVM) to create a separate partition for
+# /tmp, then go to step 5.
+# 5. If found, add the noexec option to the fourth field, using a comma to separate from
+# other options.
+# 6. Remount partition by using the mount -o remount,noexec /tmp command.
+# For further details, see the guidance on the Logical Volume Manager (LVM) for more informa
+# tion on repartitioning filesystems:
+# http://tldp.org/HOWTO/LVM-HOWTO/
+if [ `sed -n -e '/^\/.*.[\ \t]\/tmp[\ \t]\+.*noexec.*$/p' /etc/fstab| wc -l` -gt 0 ]; then
+        echo "everything ok - /tmp has noexec mount option enabled"
+        exit 0
+else
+        echo "Failure - /tmp does not have noexec in its mount point options"
+        echo " For further details, see the guidance on the Logical Volume Manager (LVM) for more information on repartitioning filesystems:"
+        echo " http://tldp.org/HOWTO/LVM-HOWTO/"
+        echo $?
+fi

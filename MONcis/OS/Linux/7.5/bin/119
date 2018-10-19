@@ -1,0 +1,28 @@
+TestDesc=" Verify That a /var/log/audit Partition Is in the /etc/fstab File"
+# No Results 0
+# Description The /var/log/audit directory is used to store log data created the auditing daemon, auditd.
+# There are two important reasons to ensure that system logs are stored on a separate parti
+# tion: protection against resource exhaustion (since logs can grow quite large) and protection
+# of audit data.
+# Rules System Configuration Files
+# Element Equals "/etc/fstab"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[^\#\n]*[\
+# \t]+/var/log/audit[\ \t]+.*$/ (Flags:Multiline,Comments mode) /var/log/audit Entry Exists
+# Remediation To remediate failure of this policy test, create separate a partition for /var/log/audit.
+# Creating a separate partition for /var/log/audit:
+# 1. For new installations, check the box to "Review and modify partitioning" and create
+# a separate partition for /var/log/audit.
+# 2. For systems that were previously installed, use the Logical Volume Manager (LVM)
+# to create partitions.
+# For further details, see the guidance on the Logical Volume Manager (LVM) for more informa
+# tion on repartitioning filesystems:
+# http://tldp.org/HOWTO/LVM-HOWTO/
+#!/bin/bin
+
+Testline=`more /etc/fstab | grep "/var/log/audit"`
+if [ -e "$Testline" ]; then
+     echo "create separate a partition for /var/log/audit."
+else
+     echo " /var/log/audit Partitions is in the /etc/fstab file"
+fi
+

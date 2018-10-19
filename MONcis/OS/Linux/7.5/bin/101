@@ -1,0 +1,26 @@
+TestDesc="Status Severity Time Verify That Processes That Start Prior to auditd Are Also Audited"
+# No Results 0
+# Description Audit events need to be captured on processes that start up prior to auditd, so that potential
+# malicious activity cannot go undetected.
+# Rules System Configuration Files
+# Element Equals "/boot/grub2/grub.cfg"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*l
+# inux(?:\d+)?[\ \t]+(?!.*\baudit=1\b).*$/ (Flags:Multiline,Comments mode) Processes without
+# Audit Does not exist
+# Remediation To remediate failure of this policy test, enable auditing for processes that start prior to auditd.
+# Configuring auditing for processes that start prior to auditd:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/default/grub file.
+# 3. Add the audit=1 parameter as part of GRUB_CMDLINE_LINUX.
+# 4. Run the command grub2-mkconfig -o /boot/grub2/grub.cfg to update the grub con
+# figuration.
+if [ `/usr/bin/sed -n -e '/^[\ \t]linux.*.[\ \t]audit=1[\ \t].*$/p' /boot/grub2/grub.cfg |wc -l` -eq 0 ]; then
+        echo "Failure - audit is not enabled grub"
+        echo "Open the /etc/default/grub"
+        echo "Add audit=1 parameter in the GRUB_CMDLINE_LINUX=parameter1 parameter2 ... line."
+        echo "Run grub2-mkconfig -o /boot/grub2/grub.cfg "
+        exit $?
+else
+        echo "everything is ok - selinux is not enabled"
+fi
+        exit 0

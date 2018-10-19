@@ -1,0 +1,23 @@
+TestDesc="Status Severity Time Verify That X Windows Is Not Installed on the System No Results 0"
+# Description The X Windows system provides a Graphical User Interface (GUI) where users can have mul
+# tiple windows in which to run programs and various add on. The X Windows system is typical
+# ly used on desktops where users login, but not on servers where users typically do not login.
+# Unless your organization specifically requires graphical login access via the X Windows Sys
+# tem, remove the server to reduce the potential attack surface.
+# Rules List of Installed Packages
+# Element Equals "installed packages"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*x
+# org-x11-server-.*$/ (Flags:Multiline,Comments mode) X Window System Does not exist
+# Remediation To remediate failure of this policy test, remove software group "X Window System"
+# Remove software group "X Window System":
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the rpm -qa | grep xorg-x11 command to list all Xorg packages.
+# 3. Remove all packages listed in step 2.
+if [ `/usr/bin/rpm -qa| /usr/bin/sed -n -e '/^[\ \t]*xorg-x11-server-[0-9].*$/p'|wc -l` -gt 0 ];  then
+        echo "xorg-x11-server found removing package"
+        /usr/bin/yum erase xorg-x11-server
+        exit $?
+else
+        echo "everything is Ok - no xorg-x11-server package found"
+        exit 0
+fi

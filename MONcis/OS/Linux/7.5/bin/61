@@ -1,0 +1,47 @@
+TestDesc="Status Severity Time Verify No UID 0 Entries Other than root No Results 0"
+# Description This test verifies that the only account in /etc/passwd that has a UID of 0 is the 'root' account.
+# Allowing non-root accounts to have a UID of 0 would let those accounts perform actions that
+# only 'root' should be allowed to perform.
+# Rules System Configuration Files
+# Element Equals "/etc/passwd"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /(?:^root:[^
+# \#:&&\S]*:(?!0)\d+:|^(?!root\b)[^\#:&&\S]*:[^\#:&&\S]*:0:).*/ (Flags:Multiline,Comments mode)
+# Accounts with UID 0 Other than root Does not exist
+# Remediation To remediate failure of this policy test, change UID of the root account to 0 and UIDs of others
+# to not equal to 0.
+# Changing UID of the root account to 0 and UIDs of others to not equal to 0:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the grep "^[[:space:]]*root" /etc/passwd | awk -F ":" '{print$1 " has UID
+# equal to "$3"."}' command to check UID of the root account.
+# 3. If UID of root is not equal to 0, then run the usermod -u 0 root command to change
+# UID of root to 0.
+# 4. Run the grep ":0:" /etc/passwd | grep -v "^ [[:space:]]* root" | awk -F ":" '{print$1
+# ":"$3":"}' | grep ":0:" command to list all accounts (except root) that have UID equal
+# to 0.
+# 5. Run the usermod -u <UID> <user_name> command to change UID of the above ac
+# counts with <UID> is not equal to 0.
+# For further details, please run the command man 5 passwd to read man page.
+VLDROOT=0
+ZEROUSR=0
+ZERONAM=""
+if [ `sed -n -e '/^root:.*:0\(:.*\)\{4\}/p' /etc/passwd | wc -l` -ne 1 ]; then
+        echo "Failure - root account does not have a USERID of 0"
+        echo ""
+else
+        echo "Everything Ok - root has a UID of 0 "
+        VLDROOT=1
+fi
+for USRNM in `sed -n -e '/^\(.*\):.*:0\(:.*\)\{4\}/s//\1/p' /etc/passwd` ; do
+        if [ $USRNM != "root" ]; then
+                ZEROUSR=1
+                echo "Failure  - non root account has UID of 0"
+		ZERONAM=$ZERONAM" "$USRNM
+        fi
+done
+if [ $ZEROUSR -eq 0 ]; then
+	echo "Everythin ok - no other user account has UID of 0"
+else
+	echo "these accounts have UID of 0 - please rectify "$ZERONAM
+fi
+RTRN=`expr $VLDROOT + $ZEROUSR`
+exit $RTRN

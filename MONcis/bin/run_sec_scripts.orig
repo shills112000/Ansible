@@ -1,0 +1,299 @@
+#!/bin/bash -a
+## Used -a to auto export all variables to called scripts
+## Script to harden Servers based on script generated from tripwire reports
+## Author Bruce D Porter
+## Date April 2016
+##
+## Script will log all activity
+## Script will determine OS and run security scripts from relevant dirs
+##
+#### Presets
+
+status=0
+cisstat=0
+ver=$(date +%d%m%H%M%S)
+LogFile="/var/log/harden_${ver}.log"
+
+exec > ${LogFile} 2>&1
+###### Routines
+check() {
+## Get status from command
+if [ ${1} -ne 0 ] ; then
+        err "${2}" $1
+        return
+fi
+}
+
+err() {
+# Standard error output
+echo ">>>>>>>> $0 FAILED at section ${1} with exit code $2 <<<<<<<<"
+}
+
+message() {
+# Standard message output
+echo ">>>>>>>> $1 <<<<<<<"
+}
+
+progress() {
+# Standard progress output
+echo "******************************" | tee -a ${LogFile}
+echo "****** Process Progress ******" | tee -a ${LogFile}
+echo "****** Test ${1}" | tee -a ${LogFile}
+echo "******************************" | tee -a ${LogFile}
+}
+
+check_cis() {
+# Check the previous CIS hardening section has completed OK
+# or not
+# $1 = status $2 = section progress
+if [ ${1} -ne 0 ] ; then
+        echo "${2} did not complete successfully"
+        err "${2}" $1
+else
+        echo ">>>>>>>>>>>> ${2} hardening completed OK"
+fi
+}
+
+create_ndd() {
+## Solaris (S10) maybe move to a Util call ?
+## Create a script to force the Network params at each boot
+##
+cat > /lib/svc/method/cis_netconfig.sh << END
+## #!/sbin/sh
+ndd -set /dev/ip ip_forward_src_routed 0
+ndd -set /dev/ip ip6_forward_src_routed 0
+ndd -set /dev/tcp tcp_rev_src_routes 0
+ndd -set /dev/ip ip_forward_directed_broadcasts 0
+ndd -set /dev/tcp tcp_conn_req_max_q0 4096
+ndd -set /dev/tcp tcp_conn_req_max_q 1024
+ndd -set /dev/ip ip_respond_to_timestamp 0
+ndd -set /dev/ip ip_respond_to_timestamp_broadcast 0
+ndd -set /dev/ip ip_respond_to_address_mask_broadcast 0
+ndd -set /dev/ip ip_respond_to_echo_multicast 0
+ndd -set /dev/ip ip6_respond_to_echo_multicast 0
+ndd -set /dev/ip ip_respond_to_echo_broadcast 0
+ndd -set /dev/arp arp_cleanup_interval 60000
+ndd -set /dev/ip ip_ire_arp_interval 60000
+ndd -set /dev/ip ip_ignore_redirect 1
+ndd -set /dev/ip ip6_ignore_redirect 1
+ndd -set /dev/tcp tcp_extra_priv_ports_add 6112
+ndd -set /dev/ip ip_strict_dst_multihoming 1
+ndd -set /dev/ip ip6_strict_dst_multihoming 1
+ndd -set /dev/ip ip_send_redirects 0
+ndd -set /dev/ip ip6_send_redirects 0
+END
+chmod +x /lib/svc/method/cis_netconfig.sh
+chown root:bin /lib/svc/method/cis_netconfig.sh
+
+## Create the XML to launch the SMF
+
+cat > /var/svc/manifest/site/ndd-service.xml <<EOF
+<?xml version="1.0"?>
+<!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
+<!--
+ Copyright 2005 Sun Microsystems, Inc.  All rights reserved.
+ Use is subject to license terms.
+
+       ident   "@(#)ndd-service    1.1     09/09/01 YTC_Systems"
+
+        NOTE:  This service manifest is not editable; its contents will
+        be overwritten by package or patch operations, including
+        operating system upgrade.  Make customizations in a different
+        file.
+-->
+
+<service_bundle type='manifest' name='ndd-service'>
+
+<service
+        name='site/ndd-service'
+        type='service'
+        version='1'>
+
+        <!-- network configuration is required -->
+        <dependency
+                name='network'
+                grouping='optional_all'
+                restart_on='none'
+                type='service'>
+                <service_fmri value='svc:/milestone/network' />
+        </dependency>
+
+        <!-- local filesystem required -->
+        <dependency
+                name='filesystem'
+                grouping='require_all'
+                restart_on='none'
+                type='service'>
+                <service_fmri value='svc:/system/filesystem/local' />
+        </dependency>
+
+        <exec_method
+                type='method'
+                name='start'
+                exec='/lib/svc/method/cis_netconfig.sh'
+                timeout_seconds='600'>
+        </exec_method>
+
+        <exec_method
+                type='method'
+                name='stop'
+                exec=':true'
+                timeout_seconds='3'>
+        </exec_method>
+
+        <property_group name='startd' type='framework'>
+                <propval name='duration' type='astring' value='transient' />
+        </property_group>
+
+        <instance name='default' enabled='true' >
+
+        </instance>
+
+       <stability value='Unstable' />
+
+        <template>
+               <common_name>
+                        <loctext xml:lang='C'>
+                                'Set NDD for CIS security'
+                        </loctext>
+                </common_name>
+                <documentation>
+
+                        <manpage title='ndd-service' section='1M'
+                                manpath='/usr/share/man' />
+                </documentation>
+        </template>
+</service>
+
+</service_bundle>
+EOF
+svccfg import /var/svc/manifest/site/ndd-service.xml ; status=$? ; cisstat=$(expr ${cisstat} + ${status}) ; check ${status} ${CIS}
+
+}
+
+netmask_cidr() {
+# Map a dot style netmask to a cidr one.
+#
+if [ -z "$(echo $1 | grep '\.')" ] ; then
+        echo $*
+        exit 0
+fi
+
+length=0
+for quad in 1 2 3 4
+do
+        byte="$(echo $1 | cut -s -d. -f${quad})"
+        for bit in 7 6 5 4 3 2 1 0
+        do
+               if [ $(( ${byte} & ( 1 << bit ) )) -gt 0 ] ; then
+                        length=$(($length+1))
+                else
+                        break
+                fi
+        done
+done
+echo ${length}
+}
+
+get_cidr() {
+#
+if [ "$#" != "1" ]; then
+        echo "Usage: $0 <mask>" 1>&2
+        exit 1
+fi
+
+bits=$1
+mask=""
+dot=""
+for b1 in 1 2 3 4
+do
+        byte=0
+        for b2 in 128 64 32 16 8 4 2 1
+        do
+                if [ $bits -gt 0 ]; then
+                        byte=`expr $byte + $b2`
+                       bits=`expr $bits - 1`
+                fi
+        done
+        mask="${mask}${dot}${byte}"
+        dot="."
+done
+
+echo ${mask}
+}
+
+get_network() {
+#
+if [ "$#" != "2" ]; then
+        err "Usage: $0 <address> <mask>"
+        exit 1
+fi
+
+network=""
+dot=""
+
+for quad in 1 2 3 4
+do
+        aquad="`echo $1 | cut -s -d. -f${quad}`"
+        nquad="`echo ${mask} | cut -s -d. -f${quad}`"
+        network="${network}${dot}`ksh -c \"echo \$(($aquad & $nquad))\"`"
+        dot="."
+done
+echo ${network}
+}
+
+## End Routines
+
+##
+## Now we need to know where we are working (OS) and either run a specified script
+## Or everything in the relevant dir
+##
+
+OS=$(uname -s)
+# Maybe churn this off to functions
+case ${OS} in
+        SunOS) OSRel=$(uname -v) ; iszone=$(zoneadm list | grep global | wc -l) ;;
+        Linux) OSRel=$(uname -r) ;;
+        *) err "Unknown OS - ${OS}" ; exit 1 ;;
+esac
+
+AppDir=${PWD%bin}
+AppDir=$(dirname $0)
+AppDir=${AppDir%bin}
+
+ScriptLoc="${AppDir}/OS/${OS}/${OSRel}/bin"
+
+if [ $# -ne 0 ] ; then
+        ScriptList="$1"
+        message "Validating list of scripts to run"
+      for a in ${ScriptList}
+        do
+                if [ ! -x ${ScriptLoc}/${a} ] ; then
+                        message "${ScriptLoc}/${a} does not exist or is not executeable - aborting run"
+                        exit 1
+                fi
+        done
+else
+        ScriptList="$(ls ${ScriptLoc}| sort -n)"
+fi
+
+for a in ${ScriptList}
+do
+        cisstat=0
+        CIS="$(egrep '(^TestDesc=)' ${ScriptLoc}/${a}| cut -d= -f2- )"
+        if [ -z "${CIS}" ] ; then
+                CIS="No Description for ${a}"
+        fi
+
+        echo "$a being run" | tee -a  ${LogFile}
+        progress "${CIS}"
+
+# Lets run it
+        ${ScriptLoc}/${a}
+        status=$?
+        cisstat=$(expr ${cisstat} + ${status})
+        check ${status} "${CIS}"
+done
+
+message " <<<<<<<< End of Hardening Run >>>>>>>>>>>>>>"
+

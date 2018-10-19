@@ -1,0 +1,71 @@
+TestDesc=" Verify That SSH X11 Forwarding Is Disabled " 
+# Description The X11Forwarding parameter provides the ability to tunnel X11 traffic through the connection
+# to enable remote graphic connections.
+# Disable X11 forwarding unless there is an operational requirement to use X11 applications di
+# rectly. There is a small risk that the remote X11 servers of users who are logged in via SSH
+# with X11 forwarding could be compromised by other users on the X11 server. Note that even
+# if X11 forwarding is disabled, users can always install their own forwarders.
+# Rules System Configuration Files
+# Element Equals "/etc/ssh/sshd_config"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*X
+# 11Forwarding[\ \t]+(\S+)[\ \t]*$/ (Flags:Multiline,Case insensitive,Comments mode) (SSH X11
+# Forwarding Equals "no" AND SSH X11 Forwarding Setting Exists ) OR SSH X11 Forwarding
+# Setting Does not exist
+# Remediation To remediate failure of this policy test, configure the SSH server to disable X11 Forwarding.
+# Configuring the SSH server to disable X11 Forwarding:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/ssh/sshd_config file.
+# 3. Find the line X11Forwarding <value>.
+# 4. Set <value> to no and save the file.
+# 5. Run the pkill -HUP sshd or /sbin/service sshd restart commands to restart the
+# sshd service.
+# For further details, please run the command man sshd_config to read man page.
+# initialize Variables
+  File="/etc/ssh/sshd_config"
+  Line="X11Forwarding no"
+  SERelease=`/bin/cat "$File" |grep "$Line"`
+#
+# Backup the file before updating
+    if [ -e "$File" ]; then
+       BaseName=`/bin/basename "$File" 2>/dev/null`
+       DirName=`/usr/bin/dirname "$File" 2>/dev/null`
+       FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+       if [ ! -d "$FullPath" ]; then
+          CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+          if [ -n "$CreateLog" ]; then
+             /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+             exit 1003
+          fi
+       fi
+       BackupName="$FullPath/${BaseName}.tecopy"
+       CopyLog=`/bin/cp -f "$File" "$BackupName" 2>&1`
+     if [ -n "$CopyLog" ]; then
+          /bin/echo "FAILURE-1007: Could not backup [$File] file"
+          exit 1007
+       fi
+   else
+      /bin/echo FAILURE-1002: [$File] file/directory does not exist
+      exit 1002
+   fi
+
+#
+sed -i 's/X11Forwarding yes/X11Forwarding no/g' "$File"
+SERelease=`/bin/cat "$File" |grep "$Line"`
+  if [ -n "$SERelease" ]; then
+     /bin/echo " X11Forwarding is set to no"
+     /bin/echo "restarting sshd service" 
+     /sbin/service sshd restart 
+     exit
+  else
+# Issue the command to add line to file
+  AddLog=`(/bin/echo "$Line" >> $File) 2>&1`
+    if [ -n "AddLog" ]; then
+       /bin/echo "SUCCESS-6003: [$Line] line added to [$File] file"
+     /bin/echo "restarting sshd service"
+     /sbin/service sshd restart 
+     exit 6003
+    fi
+    fi
+   /bin/echo "FAILURE-6001: Could not add [$Line] line to [$File] file"
+   exit 6001
+fi

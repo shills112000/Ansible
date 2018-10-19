@@ -1,0 +1,61 @@
+TestDesc=" Verify That the /var/tmp Directory Is Bound to the /tmp Directory in /etc/fstab"
+# the /tmp Directory in /etc/fstab
+# No Results 0
+# Description The /var/tmp directory is normally a standalone directory in the /var file system. Binding /var/
+# tmp to /tmp establishes an unbreakable link to /tmp that cannot be removed (even by the root
+# user). It also allows /var/tmp to inherit the same mount options that /tmp owns, allowing /var/
+# tmp to be protected in the same /tmp is protected. It will also prevent /var from filling up with
+# temporary files as the contents of /var/tmp will actually reside in the file system containing /
+# tmp.
+# Rules System Configuration Files
+# Element Equals "/etc/fstab"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*/
+# tmp[\ \t]+/var/tmp[\ \t]+[^\#&&\S]+[\ \t]+[^\#&&\S]*\bbind\b.*$/ (Flags:Multiline,Comments mode)
+# Right Configuration Exists
+# Remediation To remediate failure of this policy test, bind mount the /var/tmp directory to /tmp.
+# Binding mount the /var/tmp directory to /tmp:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run following command:
+# mount --bind /tmp /var/tmp
+# 3. Open the /etc/fstab file.
+# 4. Edit the file to contain the following line:
+# /tmp /var/tmp none bind 0 0
+# 5. Save file to apply the change.
+# For further details, please run the command man fstab to read man page.
+#
+#!/bin/bash
+# initialize Variables
+FileName="/etc/fstab"
+ Line="/tmp /var/tmp none bind 0 0"
+# # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+ # Issue the command to add line to the vfstab file after mounting tmp to vat/tmp
+ mount --bind /tmp /var/tmp
+ AddLog=`(/bin/echo "$Line" >> $FileName) 2>&1`
+ if [ -n "$AddLog" ]; then
+    /bin/echo "FAILURE-6001: Could not add [$Line] line to [$FileName] file"
+    exit 6001
+ fi
+ /bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+ exit 0
+

@@ -1,0 +1,50 @@
+TestDesc="Verify That pam_cracklib.so Has try_first-pass Option"
+# No Results 0
+#Description This test verifies that the system retrieve the password from a previous stacked PAM module.
+# If not available, then prompt the user for a password.
+# Rules Get /etc/pam.d/system-auth Content
+# Element Equals "/etc/pam.d/system-auth_content"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*p
+# assword[\ \t]+(?:requisite|required)[\ \t]+[^\#&&\S]*\bpam_cracklib\.so[\ \t]+[^\#\n]*\btry_firs
+# t_pass\b.*$/ (Flags:Multiline,Comments mode) try_first_pass Parameter Exists
+# Remediation To remediate failure of this policy test, enable try_first_pass parameter.
+# Enabling try_first_pass parameter:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/pam.d/system-auth file.
+# 3. Find the line that contains:
+# password <control flag> [security_path/]pam_cracklib.so [other
+# parameters]
+# where the <control flag> is required or requisite.
+# 4. If the line is found, append the try_first_pass parameter to the end of the line.
+# • If the line is not found, review the file then edit or add some entries if needed
+# to make sure that the file contains the following ordered lines:
+# password requisite [security_path/]pam_cracklib.so
+# [other parameters] try_first_pass
+# password sufficient [security_path/]pam_unix.so [pa
+# rameters]
+# password required [security_path/]pam_deny.so
+# • Save the file.
+# For further details, please refer to:
+# RHEL 5:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Deployment
+# _Guide/index.html#s1-pam-config-files
+# RHEL 6:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Managing_Smart_
+# Cards/PAM_Configuration_Files.html
+# RHEL 7:
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html-sin
+# gle/System-Level_Authentication_Guide/#PAM_Configuration_Files
+#!/bin/bash
+# initialize Variables
+FileName="/etc/pam.d/system-auth"
+Line=`cat /etc/pam.d/system-auth |grep pam_cracklib.so |grep try_first_pass`
+ if [ -e "$Line" ]; then 
+   echo " try first pass is set in line [$Line]"
+   exit 
+ fi
+  echo " Please review the [$FileName] then edit or add some entries if needed to make sure that the file contains the following ordered lines:
+ password requisite [security_path/]pam_cracklib.so [other parameters] try_first_pass
+ password sufficient [security_path/]pam_unix.so [parameters]
+ password required [security_path/]pam_deny.so"
+
+exit

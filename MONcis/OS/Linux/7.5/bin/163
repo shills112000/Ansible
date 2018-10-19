@@ -1,0 +1,65 @@
+TestDesc=" That net.ipv4.tcp_syncookies Is Equalto 1 (Runtime Value)"
+# No Results 0
+# Description The system should be configured to send syn cookies when the syn backlog limit is exceed
+# ed. With this parameter enabled, when the system reaches a point where the number of in
+# complete TCP connections exceeds the value specified in net.ipv4.tcp_max_syn_backlog, the
+# system changes the way it responds to new connection requests. Rather than remembering
+# all new connections, the system will send out a coded response (the 'syncookie') and forget
+# that the connection request came in at all. If the client completes the connection with a third
+# ACK packet, the server will see the cookie coming back and will respond by rebuilding the
+# connection in memory.
+# Rules Kernel Parameters
+# Element Equals "Kernel Parameters"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^/proc/
+# sys/net/ipv4/tcp_syncookies:[\ \t]*(\d+)[\ \t]*$/ (Flags:Multiline,Comments mode) net.ipv4.t
+# cp_syncookies Equals 1
+# Remediation To remediate failure of this policy test, set the network parameter to enable sending of syn
+# cookies to help prevent syn flood attacks.
+# Setting the network parameter to enable sending of syncookies to help prevent syn
+# flood attacks:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/sysctl.conf file.
+# 3. Find the line net.ipv4.tcp_syncookies = <value>.
+# 4. Set the line to net.ipv4.tcp_syncookies = 1 and save the file.
+# 5. If there is no line setting net.ipv4.tcp_syncookies, add the following line:
+# net.ipv4.tcp_syncookies = 1
+# at the end of the file and save it.
+# 6. Run the sysctl -p command to apply the change.
+# For further details, please run the command man sysctl to read man page.
+#!/bin/bash
+# initialize Variables
+FileName="/etc/sysctl.conf"
+Line="net.ipv4.tcp_syncookies = 1"
+# Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+        exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo "FAILURE-1002: [$FileName] file/directory does not exist"
+    exit 1002
+ fi
+ # Issue the command to add line to the file
+sed -i 's/net.ipv4.tcp_syncookies /#net.ipv4.tcp_syncookies /g' "$FileName"
+ AddLog=`(/bin/echo "$Line" >> $FileName) 2>&1`
+ if [ -n "$AddLog" ]; then
+    /bin/echo "FAILURE-6001: Could not add [$Line] line to [$FileName] file"
+    exit 6001
+ fi
+ /bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+ /bin/echo "Restarting sshd service"
+ sysctl -p
+ exit 6003

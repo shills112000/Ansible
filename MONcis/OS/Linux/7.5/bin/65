@@ -1,0 +1,82 @@
+TestDesc="PASS_WARN_AGE Setting for Nonsystem Accounts"
+# Accounts
+# No Results 0
+# Description This test verifies that all non-system accounts are configured to begin receiving warnings at
+# least 7 days before passwords expire.
+# Rules Verify Expiration Password for Non-system Account
+# Element Equals "Expiration Password"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^\S
+# +:.*PASS_WARN_AGE=[\ \t]*(?:|-\d+|0*[1-6]?|)[\ \t]+.*/ (Flags:Multiline,Comments mode) 'Fail
+# Warning Password Age' for Non-system Accounts Does not exist
+# Remediation To remediate failure of this policy test, set the number of days warning given before a pass
+# word expires to at least 7 for the non-system accounts.
+# Setting the number of days warning given before a password expires to at least 7 for
+# the non-system accounts:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# for Acc in `awk -F: '$1 !~ /^[[:space:]]*#/ && $3>=500 && $3!=6553
+# 4 {print $1}' /etc/passwd 2>/dev/null`; do awk -F: '$1 ~ /^[[:space:
+# ]]*'$Acc'$/ && $2!~/[!*]+/ && ($6 < 7 || $6 ~ /^[[:space:]]*$/) {print
+# $1":PASS_WARN_AGE="$6}' /etc/shadow 2>/dev/null; done
+# to list non-system accounts of which the number of days warning given before a pass
+# word expires is less than 7.
+# 3. Change the number of days warning given before a password expires to at least 7
+# for non-system accounts found in step 2 using the chage -W <value> <user_name>
+# command, where <value> is greater than or equal to 7.
+# For further details, please run the command man chage to read man page.
+#!/bin/bash
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+# Initialize Variables
+ Option="PASS_WARN_AGE"
+ Value="14"
+ FailedAccounts=`/bin/awk -F":" '$1 !~ /[[:space:]]*#/ && $2!~/[!*]+/
+ {
+ GetIdCmd="/usr/bin/id -u " $1 " 2>/dev/null"; Uid=""
+ GetIdCmd | getline Uid
+ if(Uid ~ /^[0-9]+$/ && 0+Uid >= 500 && 0+Uid < 65534){
+ if($6 !~ /^-?[0-9]+$/ || 0+$6 < 14){ print $1 }
+ }
+ }' /etc/shadow 2>/dev/null`
+# Issue the command to change minimum number of days between password
+# changes
+ SavedIFS=$IFS
+ IFS=`/bin/echo -ne "\n\b"`
+ for Account in $FailedAccounts; do
+ UpdateLog=`/usr/bin/chage -W $Value "$Account" 2>&1`
+ if [ -n "$UpdateLog" ]; then
+ FailureAccounts=$Account"\n\t"$FailureAccounts
+ else
+ SuccessAccounts=$Account"\n\t"$SuccessAccounts
+ fi
+ done
+ if [ -n "$FailureAccounts" ]; then
+ FailureAccounts=`/bin/echo -e "$FailureAccounts" | /bin/sed '$d'`
+ FinalMessage="Could not change value of [$Option] to [$Value] forthe "
+ FinalMessage=$FinalMessage"following account:\n\t[$FailureAccounts]\n"
+ fi
+ IFS=$SavedIFS
+ if [ -n "$FinalMessage" ]; then
+ FinalMessage="FAILURE-7001: "$FinalMessage
+ ExitCode=7001
+ else
+ FinalMessage="SUCCESS-7001: "
+ ExitCode=0
+ fi
+ if [ -n "$SuccessAccounts" ]; then
+ SuccessAccounts=`/bin/echo -e "$SuccessAccounts" | /bin/sed '$d'`
+ FinalMessage=$FinalMessage"Value of [$Option] changed to [$Value]" 
+ FinalMessage=$FinalMessage" for the following account:\n\t[$SuccessAccounts]"
+ else
+ FinalMessage=`/bin/echo -e "$FinalMessage" | /bin/sed '$d'`
+ fi
+ /bin/echo -e "$FinalMessage"
+ exit $ExitCode
+# AR_ACTION = RHEL_OTHERS
+# AR_COMPLETION = COMPLETION_NONE
+# AR_TEST_ID = T0014008
+# AR_TEST_NAME = Verify PASS_WARN_AGE Setting for Non-system Accounts
+# Post Remediation Category None
+# Post Remediation Steps No additional Post Remediation steps
+# Remediated Elements /etc/shadow
+# /etc/shadowNode:

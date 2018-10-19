@@ -1,0 +1,31 @@
+TestDesc="Status Severity Time Verify That 'nodev' Option Is Added to /tmp Partition in the /etc/fstab File No Results 0"
+# Description The nodev mount option specifies that the filesystem cannot contain special devices. Since
+# the /tmp filesystem is not intended to support devices, set this option to ensure that users can
+# not attempt to create block or character special devices in /tmp.
+# Rules System Configuration Files
+# Element Equals "/etc/fstab"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*[
+# ^\#&&\S]+[\ \t]+/tmp[\ \t]+[^\#&&\S]+[\ \t]+[^\#&&\S]*\bnodev\b.*$/ (Flags:Multiline,Comments
+# mode) /tmp with nodev Option Exists
+# Remediation To remediate failure of this policy test, set nodev option for /tmp partition.
+# Setting nodev option for /tmp partition:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/fstab file.
+# 3. Find the line with options for /tmp.
+# 4. If not found, use the Logical Volume Manager (LVM) to create a separate partition
+# for /tmp then go to step 5.
+# 5. If found, add the nodev option to the fourth field, using a comma to separate from
+# other options.
+# 6. Remount partition by using the mount -o remount,nodev /tmp command.
+# For further details, see the guidance on the Logical Volume Manager (LVM) for more informa
+# tion on repartitioning filesystems:
+# http://tldp.org/HOWTO/LVM-HOWTO/
+if [ `sed -n -e '/^\/.*.[\ \t]\/tmp[\ \t]\+.*nodev.*$/p' /etc/fstab| wc -l` -gt 0 ]; then
+        echo "everything ok - /tmp has nodev mount option enabled"
+        exit 0
+else
+        echo "Failure - /tmp does not have nodev in its mount point options"
+        echo " For further details, see the guidance on the Logical Volume Manager (LVM) for more information on repartitioning filesystems:"
+        echo " http://tldp.org/HOWTO/LVM-HOWTO/"
+        echo $?
+fi

@@ -1,0 +1,159 @@
+TestDesc=" Verify That sshd_config Contains a Banner for Network Access"
+# Network Access
+# No Results 0
+# Description This test verifies that the SSH server is configured to display a login banner message when
+# it is accessed. The presence of a login banner is useful when prosecuting trespassers of the
+# computer system. Additionally, it can have the effect of obfuscating important operating sys
+# tem information.
+# Rules Verify Banner Message in /etc/ssh/sshd_config
+# Element Equals "Banner Message"
+# Version conditions Action if missing:Fail Banner Entry Equals "Exist"
+# Remediation To remediate failure of this policy test, configure the SSH daemon to use safe defaults for the
+# client and server by setting a banner message for use during SSH logins.
+# Configuring the SSH Server to use a banner:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/ssh/sshd_config file.
+# 3. Find the line
+# Banner <banner_file>
+# where <banner_file> is /etc/issue.net or /etc/issue
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the following command to create a banner message in the <banner_file> file.
+# echo "<banner_message>" >> <banner_file>
+# where <banner_message> is a message that you would like any user who connects
+# to your SSH service to see, as example: "Authorized uses only. All activity may
+# be monitored and reported" .
+# 6. Run the service sshd restart commands to restart the sshd service.
+# Note: If a banner message existed in the <banner_file> file, you needn't execute step 5.
+# For further details, please run the command man sshd_config to read man page.
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script
+# #/bin/sh $(ScriptFile.sh)
+# # Initialize Variables
+ #FileName="/etc/ssh/sshd_config"
+# BannerLine="Authorized uses only. All activity may be monitored and reported."
+# Script Functions
+# AddLine(){
+#         FileName=$1; 
+#         Line=$2
+#         AddLog=`(/bin/echo "$Line" >> "$FileName") 2>&1`
+#         if [ -n "$AddLog" ]; then
+#            if [ -n "$SuccMsg" ]; then
+#               /bin/echo "FAILURE-7001: Could not add [$Line] line to [$FileName] file"
+#               SuccMsg=`/bin/echo -e "$SuccMsg" | /bin/sed '$d'`
+#               /bin/echo -e "$SuccMsg"
+#               exit 7001
+#            fi
+#            /bin/echo "FAILURE-6001: Could not add [$Line] line to [$FileName] file"
+#            exit 6001
+#        else
+#            if [ -z "$SuccMsg" ]; then
+#               SuccessCode=6003
+#            else
+#               SuccessCode=7001
+#            fi
+#            SuccMsg=$SuccMsg"[$Line] line added to [$FileName] file\n"
+#        fi
+# }
+# Issue commands to remediate files
+# if [ ! -e "$FileName" ]; then
+#    /bin/echo "FAILURE-1002: [$FileName] file/directory does not exist"
+#    exit 1002
+# fi
+# BannerFile=`/bin/awk 'tolower($1) ~ /^banner$/{print $2}' "$FileName" 2>/dev/null`
+# if [ -f "$BannerFile" -o "$BannerFile" == "/etc/issue.net" ]; then
+#   AddLine "$BannerFile" "$BannerLine"
+# else
+# Remediate /etc/ssh/sshd_config
+#    if [ -e "$FileName" ]; then
+#        BaseName=`/bin/basename "$FileName" 2>/dev/null`
+#        DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+#        FullPath="$TW_REMEDIATION_BACKUP_DIR$DirName"
+#        if [ ! -d "$FullPath" ]; then
+#           CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+#           if [ -n "$CreateLog" ]; then
+#             /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+#             exit 1003
+#           fi
+#    fi
+#    BackupName="$FullPath/${BaseName}.tecopy"
+#    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+#    if [ -n "$CopyLog" ]; then
+#       /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+#       exit 1007
+#    fi
+# fi
+# IsExisted=`/bin/egrep -i "^[[:space:]]*banner[[:space:]] $FileName" 2>/dev/null`
+# if [ -z "$IsExisted" ]; then
+#    AddLine "$FileName" "Banner /etc/issue.net"
+# else
+#    UpdateLog=`(/bin/awk -F"#" 'BEGIN{OFS="#"} tolower($1) ~ /^[[:space:]]*banner\>/{ $1 = "Banner /etc/issue.net" }{print}' 
+# "$BackupName" > "$FileName") 2>&1`
+#    if [ -n "$UpdateLog" ]; then
+#       /bin/echo "FAILURE-7001: Could not update the argument of [Banner] keyword to [/etc/issue.net] in [$FileName] file"
+#       /bin/cp -f "$BackupName" "$FileName" 2>/dev/null
+#       exit 7001
+#    else
+#       SuccMsg=$SuccMsg"Argument of [Banner] keyword updated to"
+#       SuccMsg=$SuccMsg" [/etc/issue.net] in [$FileName] file\n"
+#       SuccessCode="7001"
+#    fi
+#  fi 
+#FileName="/etc/issue.net"
+# IsEmpty=`/bin/egrep -v "^[[:space:]]*(#|$)" "$FileName" 2>/dev/null`
+# if [ -z "$IsEmpty" ]; then
+#    AddLine "$FileName" "$BannerLine"
+# fi
+# exit 0
+# Post Remediation Category Other
+# Post Remediation Steps To complete this remediation:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the pkill -HUP sshd or /sbin/service sshd restart commands to restart the
+# sshd service.
+# Remediated Elements /etc/ssh/sshd_config
+
+#####################################################################
+
+#!/bin/bash
+# initialize Variables
+FileName="/etc/ssh/sshd_config"
+#FileName="test.txt"
+TempFile="sshd_conf_tmp"
+BannerLine="Authorized uses only. All activity may be monitored and reported."
+Line="Banner /etc/issue"
+BannerFile="/etc/issue"
+Checkline=`/bin/cat $FileName | grep "Banner /etc/issue"`
+netCheckline=`/bin/cat $FileName | grep "Banner /etc/issue.net"`
+ # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+sed -i 's/Banner/#Banner/g' "$FileName"
+ if [ -n "$netCheckline" ]; then
+    BannerFile="/etc/issue.net"
+    Line="Banner /etc/issue.net"
+ fi
+
+ /bin/echo "$BannerLine" >> "$BannerFile"
+ /bin/echo "$Line" >> "$FileName"
+ /bin/echo "SUCCESS-6003: [$Line] line updated in [$FileName] file"
+ /bin/echo "restarting service to apply changes"
+ /sbin/service sshd restart
+exit 6003

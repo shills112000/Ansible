@@ -1,0 +1,22 @@
+TestDesc="Status Severity Time Verify That the xinetd Package Is Removed No Results 0"
+# Description The eXtended InterNET Daemon (xinetd) is an open source super daemon that replaced the
+# original inetd daemon. The xinetd daemon listens for well known services and dispatches the
+# appropriate daemon to properly respond to service requests. If there are no xinetd services
+# required, it is recommended that the daemon be deleted from the system.
+# Rules List of Installed Packages
+# Element Equals "installed packages"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*x
+# inetd-\d.*$/ (Flags:Multiline,Comments mode) xinetd Package Does not exist
+# Remediation To remediate failure of this policy test, erase xinetd package.
+# Erasing xinetd package:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the yum erase xinetd command to remove xinetd package.
+# For further details, please run the command man yum to read man page.
+if [ `/usr/bin/rpm -qa| /usr/bin/sed -n -e '/^[\ \t]*xinetd-[0-9].*$/p'|wc -l` -gt 0 ];  then
+        echo "xinetd found removing package"
+        /usr/bin/yum erase xinetd
+        exit $?
+else
+        echo "everything is Ok - no xinetd package found"
+        exit 0
+fi

@@ -1,0 +1,31 @@
+TestDesc="Status Severity Time Verify That 'nosuid' Option Is Added to /tmp Partition in the /etc/fstab File No Results 0"
+# Description The nosuid mount option specifies that the filesystem cannot contain set userid files. Since
+# the /tmp filesystem is only intended for temporary file storage, set this option to ensure that
+# users cannot create set userid files in /tmp.
+# Rules System Configuration Files
+# Element Equals "/etc/fstab"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*[
+# ^\#&&\S]+[\ \t]+/tmp[\ \t]+[^\#&&\S]+[\ \t]+[^\#&&\S]*\bnosuid\b.*$/ (Flags:Multiline,Comments
+# mode) /tmp with nosuid Option Exists
+# Remediation To remediate failure of this policy test, set the nosuid option for the /tmp partition.
+# Setting the nosuid option for the /tmp partition:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/fstab file.
+# 3. Find the line with options for /tmp.
+# 4. If not found, use the Logical Volume Manager (LVM) to create a separate partition
+# for /tmp then go to step 5.
+# 5. If found, add the nosuid option to the fourth field, using a comma to separate from
+# other options.
+# 6. Remount the partition by using the mount -o remount,nosuid /tmp command.
+# For further details, see the guidance on the Logical Volume Manager (LVM) for more informa
+# tion on repartitioning filesystems:
+# http://tldp.org/HOWTO/LVM-HOWTO/
+if [ `sed -n -e '/^\/.*.[\ \t]\/tmp[\ \t]\+.*nosuid.*$/p' /etc/fstab| wc -l` -gt 0 ]; then
+        echo "everything ok - /tmp has nosuid mount option enabled"
+        exit 0
+else
+        echo "Failure - /tmp does not have nosuid in its mount point options"
+        echo " For further details, see the guidance on the Logical Volume Manager (LVM) for more information on repartitioning filesystems:"
+        echo " http://tldp.org/HOWTO/LVM-HOWTO/"
+        echo $?
+fi

@@ -1,0 +1,52 @@
+TestDesc="Verify That retry Option Is Set to 3 or Less"
+# No Results 0
+# Description This test verifies that the system is configured to allow 3 tries before sending back a failure.
+# Rules Get /etc/pam.d/system-auth Content
+# Element Equals "/etc/pam.d/system-auth_content"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ \t]*p
+# assword[\ \t]+(?:requisite|required)[\ \t]+[^\#&&\S]*\bpam_cracklib\.so[\ \t]+[^\#\n]*\bretry=[1
+# -3]\b.*$|^[\ \t]*password[\ \t]+(?:requisite|required)[\ \t]+[^\#&&\S]*\bpam_cracklib\.so[\ \t](?![^\#
+# \n]*\bretry=).*$/ (Flags:Multiline,Comments mode) retry Setting Exists
+# Remediation To remediate failure of this policy test, set the retry option to less than or equal to 3.
+# Setting the retry option to less than or equal to 3:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/pam.d/system-auth file.
+# 3. Find the line that contains:
+# password <control flag> [security_path/]pam_cracklib.so [other
+# parameters]
+# where the <control flag> is required or requisite.
+# 4. If the line is found, set the retry option to less than or equal to 3.
+# • If the line is not found, review the file then edit or add some entries if needed
+# to make sure that the file contains the following ordered lines:
+# password requisite [security_path/]pam_cracklib.so
+# [other parameters] retry=<value>
+# password sufficient [security_path/]pam_unix.so [pa
+# rameters]
+# password required [security_path/]pam_deny.so
+# where <value> is less than or equal to 3.
+# • Save the file.
+# For further details, please refer to:
+# RHEL 5:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Deployment
+# _Guide/index.html#s1-pam-config-files
+# RHEL 6:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Managing_Smart_
+# Cards/PAM_Configuration_Files.html
+# RHEL 7:
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html-sin
+# gle/System-Level_Authentication_Guide/#PAM_Configuration_Files
+#!/bin/bash
+# initialize Variables
+FileName="/etc/pam.d/system-auth"
+Line=`cat /etc/pam.d/system-auth |grep pam_cracklib.so |grep retry`
+ if [ -e "$Line" ]; then
+   echo "$FileName"
+   echo " try retry is set in line [$Line]"
+   echo "if set to greater then 3 change to 3 or less" 
+   exit
+ fi
+  echo " Please review the [$FileName] then edit or add some entries if needed to make sure that the file contains the following ordered lines:
+ password requisite [security_path/]pam_cracklib.so [other parameters] retry=3
+ password sufficient [security_path/]pam_unix.so [parameters]
+ password required [security_path/]pam_deny.so"
+

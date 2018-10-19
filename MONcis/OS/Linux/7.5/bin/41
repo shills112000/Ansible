@@ -1,0 +1,29 @@
+TestDesc="Status Severity Time Verify /etc/cron.d Permissions No Results 0"
+# Description The /etc/cron.d directory contains system cron jobs that need to run in a similar manner to the
+# hourly, daily weekly and monthly jobs from /etc/crontab, but require more granular control as
+# to when they run. The files in this directory cannot be manipulated by the crontab command,
+# but are instead edited by system administrators using a text editor. The commands below re
+# strict read/write and search access to user and group root, preventing regular users from ac
+# cessing this directory.
+# Rules System Configuration Files
+# Element Equals "/etc/cron.d"
+# Version conditions Action if missing:Pass User Matches "^root[\ \t]+\(\d+\)[\ \t]*$" AND Group Matches "^root[\
+# \t]+\(\d+\)[\ \t]*$" AND Permissions Matches "^d.{3}-{6}.*$"
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the /etc/
+# cron.d directory.
+# Setting appropriate permissions and ownership on the /etc/cron.d directory:
+# 1. Become superuser or assume an equivalent role.
+# 2. Check the permissions and ownership of the directory using the ls -ldL /etc/cron.d
+# command.
+# 3. Change permissions to 700 or more restrictive using the chmod go-rwx /etc/cron.d
+# command.
+# 4. Change ownership to root:root using the chown root:root /etc/cron.d command.
+if [ `ls -ld /etc/cron.d|sed -n -e '/^d.\{3\}-\{6\}\.[\ \t].*.[\ \t]root[\ \t]\+root[\ \t]\+[0-9]\+.*$/p'|wc -l` -eq 1 ]; then
+        echo "Everything ok - Perms, owner and group are set correct for /etc/cron.d"
+        exit 0
+else
+        echo "Failure - Perms, owner and group are incorrect for /etc/cron.d please rectify"
+        echo "chmod go-rwx /etc/cron.d "
+        echo "chown root:root /etc/cron.d"
+        echo $?
+fi

@@ -1,0 +1,47 @@
+TestDesc="Status Severity Time For 64 Bit Architecture: Verify That audit Log ging Is Enabled to Log Events of clock_settime() Functions No Results 0"
+# Description This test verifies that /etc/audit/audit.rules contains the '-a always,exit -F arch=b64 -S clock
+# _settime -k time-change' option.
+# It is important to maintain an audit trail in order to thoroughly track and analyze system activity
+# when something goes wrong.
+# Rules Audit Rules for 64 bits Architecture
+# Element Equals "/etc/audit/audit.rules"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ ]*
+# -a[\ ]+(?=\S*\bexit\b)(?=\S*\balways\b)(?!\S*\bentry\b)(?!\S*\bnever\b)\S*[\ ]+(?=.*-F[\ ]+arch=
+# b64\b)(?=.*-S[\ ]+clock_settime\b)(?=.*-k[\ ]+time-change\b).*$/ (Flags:Multiline,Comments
+# mode) audit Line for Logging Events of clock_settime() Functions Exists
+# Remediation To remediate failure of this policy test, configure the system to audit events that modify sys
+# tem date and/or time.
+# Configuring the system to audit events that modify system date and/or time on RHEL 5,
+# 6:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b64 -S clock_settime -k timechange
+# entry.
+# 4. Uncomment that line or add it to the end of file (if not found) then save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Configuring the system to audit events that modify system date and/or time on RHEL 7:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/rules.d/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b64 -S clock_settime -k timechange
+# entry.
+# 4. Uncomment that line or add it to the end of file (if not found) then save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Note: This configuration only applies to 64 bits architecture.
+# For further details, please run the command man auditctl to read man page.
+if [ `sed -n -e '/^-a.*always,exit.*-F.*arch=b64.*-S.*clock_settime.*-k.*timechange/p' /etc/audit/audit.rules | wc -l ` -gt 0 ]; then
+        echo " Everything ok - Time logging line found in /etc/audit/audit.rules"
+        exit 0
+else if [ `sed -n -e '/^#-a always,exit -F arch=b64 -S clock_settime -k timechange/p' /etc/audit/audit.rules | wc -l ` -eq 1 ]; then
+        echo "Failure Time Logging line commented out in audit.rules - adding to file"
+        /bin/cp -p /etc/audit/rules.d/audit.rules /etc/audit/rules.d/audit.rules.`date '+%d%m%y%H%M%S'`
+        echo "-a always,exit -F arch=b64 -S clock_settime -k timechange" >> /etc/audit/rules.d/audit.rules
+        /usr/sbin/service auditd restart
+        exit $?
+else
+        echo "Failure Time Logging line doesnt exist in audit.rules - adding to file"
+        /bin/cp -p /etc/audit/rules.d/audit.rules /etc/audit/rules.d/audit.rules.`date '+%d%m%y%H%M%S'`
+        echo "-a always,exit -F arch=b64 -S clock_settime -k timechange" >> /etc/audit/rules.d/audit.rules
+        /usr/sbin/service auditd restart
+        exit $?
+fi
+fi

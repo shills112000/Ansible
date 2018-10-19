@@ -1,0 +1,29 @@
+TestDesc="Status Severity Time Verify That File Checking (AIDE) Is Implemented Periodically No Results 0"
+# Description Periodic file checking allows the system administrator to determine on a regular basis if critical
+# files have been changed in an unauthorized fashion.
+# Rules System Configuration Files
+# Element Equals "/var/spool/cron/root"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[^\#\n]*[\
+# \t]+/usr/sbin/aide[\ \t]+--check[\ \t]*(?:$|\#)/ (Flags:Multiline,Comments mode) Right Configura
+# tion Exists
+# Remediation To remediate failure of this policy test, you should implement periodic file checking, in compli
+# ance with site policy.
+# Implementing periodic file checking:
+# 1. Become superuser or assume an equivalent role.
+# 2. Execute the following command:
+# crontab -u root -e
+# 3. Add the following line to the crontab:
+# 0 5 * * * /usr/sbin/aide --check
+# 4. Save file to apply the change.
+# Note: The checking in this instance occurs every day at 5 am. Alter the frequency and time of
+# the checks in compliance with site policy.
+# For further details, please run the command man crontab to read man page.
+if [ `/usr/bin/crontab -l | sed -n -e '/[\ \t]\/usr\/sbin\/aide[\ \t]\+--check.*/p' |wc -l ` -eq 1 ]; then
+	echo "Everything ok - aide is et to run a check in root cron"
+	exit
+else
+	echo "Failure - no entry found for aide in root crontab"
+	echo "Add the following line to the root crontab:"
+	echo "0 5 * * * /usr/sbin/aide --check"
+	exit $?
+fi

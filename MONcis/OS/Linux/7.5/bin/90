@@ -1,0 +1,19 @@
+TestDesc="Status Severity Time Verify That Default Group ID for root Account Is 0"
+# No Results 0
+# Description Using GID 0 for the root account helps prevent root-owned files from accidentally becoming
+# accessible to non-privileged users.
+# Rules System Configuration Files
+# Element Equals "/etc/passwd"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*r
+# oot:[^:]+:\d+:(\d+):.*$/ (Flags:Multiline,Comments mode) Default GroupID for root Equals 0
+# Remediation To remediate failure of this policy test, set the default GID for root to 0.
+# Setting the default GID for root to 0:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the usermod -g 0 root command to set the default GID for root to 0.
+# For further details, please run the command man usermod to read man page.
+if [ `/usr/bin/sed -n -e '/\(^root:.*:[0-9]:\)\([0-9]\)\(:.*:.*:.*\)/s//\2/p' /etc/passwd`x == 0x ]; then
+	echo "root has correct GID of 0"
+else
+	echo "root GID is incorrect usermodding to 0 "
+	/sbin/usermod -g 0 root
+fi

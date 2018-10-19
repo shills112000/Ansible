@@ -1,0 +1,22 @@
+TestDesc="Status Severity Time Verify That the tftp-server Package Is Removed No Results 0"
+# Description Trivial File Transfer Protocol (TFTP) is a simple file transfer protocol, typically used to auto
+# matically transfer configuration or boot machines from a boot server. The package tftp-serv
+# er is the server package used to define and support a TFTP server. It is recommended that
+# TFTP be removed, unless there is a specific need for TFTP (such as a boot server).
+# Rules List of Installed Packages
+# Element Equals "installed packages"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*t
+# ftp-server-\d.*$/ (Flags:Multiline,Comments mode) tftp-server Package Does not exist
+# Remediation To remediate failure of this policy test, erase tftp-server package.
+# Erasing tftp-server package:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the yum erase tftp-server command to remove tftp-server package.
+# For further details, please run the command man yum to read man page.
+if [ `/usr/bin/rpm -qa| /usr/bin/sed -n -e '/^[\ \t]*tftp-server-[0-9].*$/p'|wc -l` -gt 0 ];  then
+        echo "Failure tftp-server found removing package"
+        /usr/bin/yum erase tftp-server
+        exit $?
+else
+        echo "everything is Ok - no tftp-server package found"
+        exit 0
+fi

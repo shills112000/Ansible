@@ -1,0 +1,73 @@
+TestDesc=" Verify That SELinux Meets or Exceeds the Default"
+# fault Targeted Policy
+# No Results 0
+# Description Security configuration requirements vary from site to site. Some sites may mandate a policy
+# that is stricter than the default policy, which is perfectly acceptable. This item is intended to
+# ensure that at least the default recommendations are met.
+# Rules System Configuration Files
+# Element Equals "/etc/selinux/config"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^SELIN
+# UXTYPE=[\ \t]*targeted[\ \t]*$/ (Flags:Multiline,Comments mode) SELinux Type Exists
+# Remediation To remediate failure of this policy test, ensure that SELinux is enabled at boot time.
+# To ensure that SELinux is enabled at boot time:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/selinux/config file.
+# 3. Find the line SELINUXTYPE=<parameter>.
+# 4. If found, then set <parameter> to targeted and save the file.
+# 5. If not found, then add the SELINUXTYPE=targeted line to the file and save it.
+# 6. Reboot to apply the change.
+# For further details, please refer to:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Security-Enhanced_L
+# inux/sect-Security-Enhanced_Linux-Working_with_SELinux-Enabling_and_Disabling_SE
+# Linux.html
+#  updating selinux config file
+# reinitialize Variables
+  File="/etc/selinux/config"
+  Line="SELINUXTYPE=targeted"
+  SERelease=`/bin/cat "$File" |grep "$Line"`
+#
+# Backup the file before updating
+    if [ -e "$File" ]; then
+       BaseName=`/bin/basename "$File" 2>/dev/null`
+       DirName=`/usr/bin/dirname "$File" 2>/dev/null`
+       FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+       if [ ! -d "$FullPath" ]; then
+          CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+          if [ -n "$CreateLog" ]; then
+             /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+             exit 1003
+          fi
+       fi
+       BackupName="$FullPath/${BaseName}.tecopy"
+       CopyLog=`/bin/cp -f "$File" "$BackupName" 2>&1`
+       if [ -n "$CopyLog" ]; then
+          /bin/echo "FAILURE-1007: Could not backup [$File] file"
+          exit 1007
+       fi
+   else
+      /bin/echo FAILURE-1002: [$File] file/directory does not exist
+      exit 1002
+   fi
+
+#
+# Check if SELINUXTYPE is set to targeted"
+# try to change SELINUXTYPE setting
+sed -i 's/SELINUXTYPE=mls/SELINUXTYPE=targeted/g' "$File"
+sed -i 's/SELINUTYPEX=minimum/SELINUXTYPE=targeted/g' "$File"
+SERelease=`/bin/cat "$File" |grep "$Line"`
+  if [ -n "$SERelease" ]; then
+     /bin/echo " SELINUXTYPE is set to targeted"
+     /bin/echo "reboot system to apply changes"
+     exit
+  else
+# Issue the command to add line to file
+  AddLog=`(/bin/echo "$Line" >> $File) 2>&1`
+    if [ -n "AddLog" ]; then
+       /bin/echo "SUCCESS-6003: [$Line] line added to [$File] file"
+      /bin/echo "reboot system to apply changes"
+     exit 6003
+    fi
+   /bin/echo "FAILURE-6001: Could not add [$Line] line to [$File] file"
+   exit 6001
+fi
+

@@ -1,0 +1,48 @@
+TestDesc="Status Severity Time For 64 Bit Architecture: Verify That audit Logging Is Enabled on the mount Events by Users No Results 0"
+# Description This test verifies that /etc/audit/audit.rules contains the '-a always,exit -F arch=b64 -S mount -
+# F auid>=500 -F auid!=4294967295 -k mounts' option.
+# It is important to maintain an audit trail in order to thoroughly track and analyze system activity
+# when something goes wrong.
+# This configuration only applies to 64 bits architecture.
+# Rules Audit Rules for 64 bits Architecture
+# Element Equals "/etc/audit/audit.rules"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ ]*
+# -a[\ ]+(?=\S*\bexit\b)(?=\S*\balways\b)(?!\S*\bentry\b)(?!\S*\bnever\b)\S*[\ ]+(?=.*-F[\ ]+arch=
+# b64\b)(?=.*-S[\ ]+mount\b)(?=.*-F[\ ]+auid>=500\b)(?=.*-F[\ ]+auid!=4294967295\b)(?=.*-k[\ ]+
+# mounts\b).*$/ (Flags:Multiline,Comments mode) audit Line for Logging the mount Events by
+# Users Exists
+# Remediation To remediate failure of this policy test, configure system to audit successful file system mount
+# s.
+# Configuring system to audit successful file system mounts on RHEL 5, 6:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b64 -S mount -F auid>=500 -F
+# auid!=4294967295 -k mounts entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Configuring system to audit successful file system mounts on RHEL 7:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/rules.d/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b64 -S mount -F auid>=500 -F
+# auid!=4294967295 -k mounts entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Note: This configuration only applies to 64 bits architecture.
+# For further details, please run the command man auditctl to read man page.
+if [ `sed -n -e '/^-a.*always,exit.*-F.*arch=b64.*-F.*auid>=500.*-F.*auid!=4294967295.*-k.*mounts/p' /etc/audit/audit.rules | wc -l ` -gt 0 ]; then
+        echo " Everything ok - mount logging line found in /etc/audit/audit.rules"
+        exit 0
+else if [ `sed -n -e '/^#-a.*always,exit.*-F.*arch=b64.*-F.*auid>=500.*-F.*auid!=4294967295.*-k.*mounts/p' /etc/audit/audit.rules | wc -l ` -eq 1 ]; then
+        echo "Failure mount Logging line commented out in audit.rules - adding to file"
+        /bin/cp -p /etc/audit/rules.d/audit.rules /etc/audit/rules.d/audit.rules.`date '+%d%m%y%H%M%S'`
+        echo "-a always,exit -F arch=b64 -F auid>=500 -F auid!=4294967295 -k mounts" >> /etc/audit/rules.d/audit.rules
+        /usr/sbin/service auditd restart
+        exit $?
+else
+        echo "Failure mount logging line doesnt exist in audit.rules - adding to file"
+        /bin/cp -p /etc/audit/rules.d/audit.rules /etc/audit/rules.d/audit.rules.`date '+%d%m%y%H%M%S'`
+        echo "-a always,exit -F arch=b64 -F auid>=500 -F auid!=4294967295 -k mounts" >> /etc/audit/rules.d/audit.rules
+        /usr/sbin/service auditd restart
+        exit $?
+fi
+fi

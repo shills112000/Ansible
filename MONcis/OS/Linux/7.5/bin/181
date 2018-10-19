@@ -1,0 +1,60 @@
+TestDesc="Verify That the Mail Transfer Agent Is Configured to Local-only Mode"
+# No Results 0
+# Description Mail Transfer Agents (MTA), such as sendmail and Postfix, are used to listen for incoming
+# mail and transfer the messages to the appropriate user or mail server. If the system is not in
+# tended to be a mail server, it is recommended that the MTA be configured to only process lo
+# cal mail.
+# Rules Check Mail Transfer Agent Mode
+# Element Equals "Check Mail Transfer Agent Mode"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /.+/
+# (Flags:Case insensitive) inet_interfaces Setting Deviation Does not exist
+# Remediation To remediate failure of this policy test, configure Mail Transfer Agent (MTA) for local-only
+# mode.
+# Configuring Mail Transfer Agent (MTA) for local-only mode:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/postfix/main.cf file.
+# 3. Find the line inet_interfaces = <value>.
+# 4. Set the line to inet_interfaces = localhost and save the file.
+# 5. If the line is not found, add the line inet_interfaces = localhost following line to the
+# RECEIVING MAIL section and save the file.
+# 6. Run the /bin/systemctl restart postfix.service command to apply the change.
+#!/bin/bash
+# initialize Variables
+
+ FileName="/etc/postfix/main.cf"
+ TempFile="main_temp"
+ Line="inet_interfaces = localhost"
+sline="RECEIVING MAIL"
+Linec=`cat -n $FileName | grep "$sline" | awk '{print $1}'`
+Linec=$(( $Linec +0 ))
+
+# # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+sed -i 's/inet_interfaces =/#inet_interfaces =/g' "$FileName"
+sed -e ''$Linec's/$/\n inet_interfaces = localhost/' "$FileName" > "$TempFile"
+/bin/cp -f "$TempFile" "$FileName" 2>&1
+/bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+/bin/echo "restarting service to apply changes"
+/bin/systemctl restart postfix.service
+exit 6003
+

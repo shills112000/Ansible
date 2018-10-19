@@ -1,0 +1,81 @@
+TestDesc=" Verify That umask Daemon Is at Least 027"
+# No Results 0
+# Description This test verifies that the default umask setting for the system is at least 027.
+# It is important to configure the system default umask in a stringent manner in order to prevent
+# daemon processes (such as the syslog daemon) from creating world-writable files by default.
+# Rules System Configuration Files
+# Element Equals "/etc/sysconfig/init"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*u
+# mask[\ \t]+0*[0-7]?[2367]7[\ \t]*(?:$|\#)/ (Flags:Multiline,Comments mode) umask Setting Ex
+# ists
+# Remediation To remediate failure of this policy test, configure the functions file to set daemon umask to at
+# least 027.
+# Configuring the functions file to set daemon umask to at least 027:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open /etc/sysconfig/init file.
+# 3. Find the line umask <value>.
+# 4. If found, replace the <value> to xy7, where 0=< x =< 7; y=2,3,6,7.
+# 5. If not found, add the line umask xy7 to the file with x, y as the above.
+# 6. Save the file.
+# Note: If there is no umask setting in /etc/sysconfig/init, you should verify umask setting in /etc/
+# init.d/functions. If umask is set to 027 in /etc/init.d/functions, the default umask setting for the
+# system is at least 027.
+# For further details, please run the command man umask to read man page.
+# Command Line /bin/sh $(ScriptFile.sh)
+#!/bin/bash
+# Script # /bin/sh $(ScriptFile.sh)
+# Initialize Variables
+ FileName="/etc/init.d/functions"
+ ParameterName="umask"
+ SeparateSymbol=" "
+ Value="027"
+# Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+    if [ -n "$CreateLog" ]; then
+       /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+       exit 1003
+    fi
+ fi
+ BackupName="$FullPath/${BaseName}.tecopy"
+ CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+ if [ -n "$CopyLog" ]; then
+    /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+    exit 1007
+ fi
+ fi
+ # Issue the command to update the value of parameter
+ IsExisted=`/bin/awk -F"$SeparateSymbol" '$1 ~ \
+ /^[[:space:]]*'"$ParameterName"'[[:space:]]*$/ {print}' \
+ "$FileName" 2>/dev/null`
+ if [ -n "$IsExisted" ]; then
+    UpdateLog=`(/bin/awk -F"$SeparateSymbol" \
+ '$1 ~ /^[[:space:]]*'"$ParameterName"'[[:space:]]*$/ { $0 = "'"$ParameterName"''"$SeparateSymbol"''"$Value"'" }{print}' "$BackupName" > "$FileName") 2>&1`
+# Rollback to the original file
+ if [ -n "$UpdateLog" ]; then
+    /bin/echo "FAILURE-4001: Could not change value of [$ParameterName] parameter to [$Value] in ["$FileName"] file"
+    /bin/cp -f "$BackupName" "$FileName" 2>/dev/null
+    exit 4001
+ fi
+ /bin/echo "SUCCESS-4001: Value of [$ParameterName] parameter changed to [$Value] in ["$FileName"] file"
+ else
+    AddLog=`(/bin/echo "${ParameterName}${SeparateSymbol}${Value}" \
+ >> "$FileName") 2>&1`
+   if [ -n "$AddLog" ]; then
+     /bin/echo "FAILURE-6001: Could not add [${ParameterName}${SeparateSymbol}${Value}] line to ["$FileName"] file"
+     exit 6001
+   fi
+   /bin/echo "SUCCESS-6003: [${ParameterName}${SeparateSymbol}${Value}] line added to ["$FileName"] file"
+ fi
+ exit 0
+ # AR_ACTION = RHEL_PARAMETER_SETTING
+ # AR_COMPLETION = COMPLETION_NONE
+ # AR_TEST_ID = T0000946
+ # AR_TEST_NAME = Verify That umask Daemon Is at Least 027
+# Post Remediation Category None
+# Post Remediation Steps No additional Post Remediation steps
+# Remediated Elements /etc/init.d/functions

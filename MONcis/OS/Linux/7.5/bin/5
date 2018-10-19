@@ -1,0 +1,88 @@
+TestDesc="Status Severity Time For 32 Bit Architecture: Verify That audit Logging Is Enabled for Owner Changes by Users No Results 0"
+# Description This test verifies that /etc/audit/audit.rules contains the '-a always,exit -F arch=b32 -S chown -
+# S fchown -S fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod' option.
+# It is important to maintain an audit trail in order to thoroughly track and analyze system activity
+# when something goes wrong.
+# Rules System Configuration Files
+# Element Equals "/etc/audit/audit.rules"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ ]*
+# -a[\ ]+(?=\S*\bexit\b)(?=\S*\balways\b)(?!\S*\bentry\b)(?!\S*\bnever\b)\S*[\ ]+(?=.*-F[\ ]+arch=
+# b32\b)(?=.*-S[\ ]+chown\b)(?=.*-S[\ ]+fchown\b)(?=.*-S[\ ]+fchownat\b)(?=.*-S[\ ]+lchown\b)(?
+# =.*-F[\ ]+auid>=500\b)(?=.*-F[\ ]+auid!=4294967295\b)(?=.*-k[\ ]+perm_mod\b).*/ (Flags:Mul
+# tiline,Comments mode) audit Line for Logging Owner Changes by Users Exists
+# Remediation To remediate failure of this policy test, configure the system to audit the events that modify ac
+# cess control permission.
+# Configuring the system to audit the events that modify access control permission on
+# RHEL 5, 6:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b32 -S chown -S fchown -S
+# fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Configuring the system to audit the events that modify access control permission on
+# RHEL 7:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/rules.d/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b32 -S chown -S fchown -S
+# fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# For further details, please run the command man auditctl to read man page.
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+# # Initialize Variables
+/bin/echo "Success - no need to run as 64bit only systems"
+exit 0
+# FileName="/etc/audit/audit.rules"
+# Line="-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S
+# lchow"
+# Line=$Line"n -F auid>=500 -F auid!=4294967295 -k perm_mod"
+# # Backup the file before updating
+# if [ -e "$FileName" ]; then
+# BaseName=`/bin/basename "$FileName" 2>/dev/null`
+# DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+# FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+# if [ ! -d "$FullPath" ]; then
+# CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+# if [ -n "$CreateLog" ]; then
+# /bin/echo "FAILURE-1003: Could not create"\
+# "[$FullPath] file/directory"
+# exit 1003
+# fi
+# fi
+# BackupName="$FullPath/${BaseName}.tecopy"
+# CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+# if [ -n "$CopyLog" ]; then
+# /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+# exit 1007
+# fi
+# else
+# /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+# exit 1002
+# fi
+# # Issue the command to add line to the file
+# AddLog=`(/bin/echo "$Line" >> $FileName) 2>&1`
+# if [ -n "$AddLog" ]; then
+# /bin/echo "FAILURE-6001: Could not add [$Line] line to
+# [$FileName] file"
+# exit 6001
+# fi
+# /bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+# exit 0
+# # AR_ACTION = RHEL_LINE_SETTING
+# # AR_COMPLETION = COMPLETION_RELOAD_SERVICE auditd
+# # AR_TEST_ID = T0015512
+# # AR_TEST_NAME = '-a always,exit -F arch=b32 -S chown -S fchown -S
+# fchownat -S lchown -F auid>=500 -F auid!=4294967295 -k perm_mod'
+# Option
+# # AR_FINAL_STEPS = To complete this remediation:
+# # AR_FINAL_STEPS = <ol><li>Become superuser or assume an equivalent
+# role.</li><li>Run the <b>/etc/init.d/auditd reload</b> command to
+# reload the filters.</li>
+# # AR_FINAL_STEPS = </ol>
+# Post Remediation Category Reload Configuration "auditd"
+# Post Remediation Steps To complete this remediation:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the /etc/init.d/auditd reload command to reload the filters.
+# Remediated Elements None

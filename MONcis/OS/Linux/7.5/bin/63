@@ -1,0 +1,169 @@
+TestDesc=" Verify PASS_MAX_DAYS Setting for Non-system Accounts"
+# tem Accounts
+# No Results 0
+# Description This test verifies that all non-system accounts are configured to expire every 90 days or less.
+# Requiring regular password changes ensures that if a password is cracked, it will only be valid
+# temporarily.
+# Rules Verify Expiration Password for Non-system Account
+# Element Equals "Expiration Password"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^\S
+# +:.*PASS_MAX_DAYS=(?!0*[1-8][0-9]?\b|0*90?\b).*/ (Flags:Multiline,Comments mode) 'Fail
+# Maximum Password Age' for Non-system Accounts Does not exist
+# Remediation To remediate failure of this policy test, set the maximum number of days during which a pass
+# word is valid to 90 or less for non-system accounts.
+# Setting the maximum number of days during which a password is valid to 90 or less for
+# non-system accounts:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# for Acc in `awk -F: '$1 !~ /^[[:space:]]*#/ && $3>=500 && $3!=6553
+# 4 {print $1}' /etc/passwd 2>/dev/null`; do awk -F: '$1 ~ /^[[:space:
+# ]]*'$Acc'$/ && $2!~/[!*]+/ && ($5>90 || $5 ~ /^[[:space:]]*$/ || $5 ==
+# 0) {print $1":PASS_MAX_DAYS="$5}' /etc/shadow 2>/dev/null;
+# done
+# to list non-system accounts of which the maximum number of days during which a
+# password is valid is greater than 90.
+# 3. Change the maximum number of days during which a password is valid to 90 or less
+# for non-system accounts found in step 2 using the chage -M <value> <user_name>
+# command, where <value> is less than or equal to 90.
+# For further details, please run the command man chage to read man page.
+#!/bin/bash
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+# Initialize Variables
+ PasswordParameter="PASS_MAX_DAYS"
+ Value="90"
+ FailedAccounts=`/bin/awk -F":" '$1 !~ /[[:space:]]*#/ && $2!~/[!*]+/
+ {
+ GetIdCmd="/usr/bin/id -u " $1 " 2>/dev/null"; Uid=""
+ GetIdCmd | getline Uid
+ if(Uid ~ /^[0-9]+$/ && 0+Uid >= 500 && 0+Uid < 65534){
+ if($5 !~ /^-?[0-9]+$/ || 0+$5 > 90){ print $1 }
+ }
+ }' /etc/shadow 2>/dev/null`
+ # Issue the command to change PASS_MAX_DAYS setting for non-system accounts
+ SavedIFS=$IFS
+ IFS=`/bin/echo -ne "\n\b"`
+ if [ -n "${FailedAccounts}" ]; then
+     for Account in $FailedAccounts; do
+         UpdateLog=`/usr/bin/chage -M $Value $Account 2>&1`
+         if [ -n "$UpdateLog" ]; then
+            FailureUpdate=`[ -z "$FailureUpdate" ] ||\
+ /bin/echo $FailureUpdate"\n"`$Account
+         else
+            SuccessUpdate=`[ -z "$SuccessUpdate" ] ||\
+ /bin/echo $SuccessUpdate"\n"`$Account
+         fi
+     done
+ else
+     /bin/echo "SUCCESS-7001: No account with failure [$PasswordParameter]"
+     exit 0
+ fi
+ IFS=$SavedIFS
+ if [ -n "${FailureUpdate}" ]; then
+    /bin/echo -e "FAILURE-7001: Could not change [$PasswordParameter] to [$Value] for [$FailureUpdate] account"
+    if [ -n "${SuccessUpdate}" ]; then
+       /bin/echo -e "Changed [$PasswordParameter] to [$Value] for [$SuccessUpdate] account"
+    fi
+    exit 7001
+ else
+    /bin/echo -e "SUCCESS-7001: Changed [$PasswordParameter] to [$Value] for [$SuccessUpdate] account"
+    exit 0
+ fi
+# # AR_ACTION = RHEL_OTHERS
+# # AR_COMPLETION = COMPLETION_NONE
+# # AR_TEST_ID = T0006757
+# # AR_TEST_NAME = Verify PASS_MAX_DAYS Setting for Non-system Accounts
+# Post Remediation Category None
+# Post Remediation Steps No additional Post Remediation steps
+# Remediated Elements /etc/shadow
+# /etc/shadowNode:
+# mon06-uk-gs2-fim-01 (Linux Server)
+# Test Status Severity Time
+# Verify PASS_MIN_DAYS Parameter in /etc/
+# login.defs
+# No Results 0
+# Description This test verifies that /etc/login.defs is configured to prevent password changes for at least 7
+# days.
+# This setting is used for the creation of new accounts. Preventing frequent password resets
+# helps protect against brute-force password cracking programs.
+# Rules System Configuration Files
+# Element Equals "/etc/login.defs"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*P
+# ASS_MIN_DAYS[\ \t]+(\d+)[\ \t]*(?:$|\#)/ (Flags:Multiline,Comments mode) PASS_MIN_DAYS
+# Greater than or equal 7
+# Remediation To remediate failure of this policy test, set the minimum number of days allowed between
+# password changes to at least 7.
+# Setting the minimum number of days allowed between password changes to at least 7:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/login.defs file.
+# 3. Find the line PASS_MIN_DAYS <value>.
+# 4. Set the <value> to 7 or greater and save the file.
+# For further details, please run the command man login.defs to read man page.
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+# # Initialize Variables
+# FileName="/etc/login.defs"
+# ParameterName="PASS_MIN_DAYS"
+# SeparateSymbol=" "
+# Value="7"
+# # Backup the file before updating
+# if [ -e "$FileName" ]; then
+# BaseName=`/bin/basename "$FileName" 2>/dev/null`
+# DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+# FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+# if [ ! -d "$FullPath" ]; then
+# CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+# if [ -n "$CreateLog" ]; then
+# /bin/echo "FAILURE-1003: Could not create"\
+# "[$FullPath] file/directory"
+# exit 1003
+# fi
+# fi
+# BackupName="$FullPath/${BaseName}.tecopy"
+# CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+# if [ -n "$CopyLog" ]; then
+# /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+# exit 1007
+# fi
+# fi
+# # Issue the command to update the value of parameter
+# IsExisted=`/bin/awk -F"$SeparateSymbol" '$1 ~ \
+# /^[[:space:]]*'"$ParameterName"'[[:space:]]*$/ {print}' \
+# "$FileName" 2>/dev/null`
+# if [ -n "$IsExisted" ]; then
+# UpdateLog=`(/bin/awk -F"$SeparateSymbol" \
+# '$1 ~ /^[[:space:]]*'"$ParameterName"'[[:space:]]*$/ {
+# $0 = "'"$ParameterName"''"$SeparateSymbol"''"$Value"'"
+# }{print}' "$BackupName" > "$FileName") 2>&1`
+# # Rollback to the original file
+# if [ -n "$UpdateLog" ]; then
+# /bin/echo "FAILURE-4001: Could not change value of
+# [$ParameterName]" \
+# "parameter to [$Value] in ["$FileName"] file"
+# /bin/cp -f "$BackupName" "$FileName" 2>/dev/null
+# exit 4001
+# fi
+# /bin/echo "SUCCESS-4001: Value of [$ParameterName] parameter
+# changed to" \
+# "[$Value] in ["$FileName"] file"
+# else
+# AddLog=`(/bin/echo "${ParameterName}${SeparateSymbol}${Value}" \
+# >> "$FileName") 2>&1`
+# if [ -n "$AddLog" ]; then
+# /bin/echo "FAILURE-6001: Could not add"\
+# "[${ParameterName}${SeparateSymbol}${Value}] line to" \
+# "["$FileName"] file"
+# exit 6001
+# fi
+# /bin/echo "SUCCESS-6003:
+# [${ParameterName}${SeparateSymbol}${Value}]" \
+# "line added to ["$FileName"] file"
+# fi
+# exit 0
+# # AR_ACTION = RHEL_PARAMETER_SETTING
+# # AR_COMPLETION = COMPLETION_NONE
+# # AR_TEST_ID = T0003382
+# # AR_TEST_NAME = Verify PASS_MIN_DAYS Parameter in /etc/login.defs
+# Post Remediation Category None
+# Post Remediation Steps No additional Post Remediation steps
+# Remediated Elements None

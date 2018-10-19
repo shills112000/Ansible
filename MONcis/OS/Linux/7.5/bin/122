@@ -1,0 +1,65 @@
+TestDesc=" Verify That at Least One of AllowUsers, AllowGroups, DenyUsers, DenyGroups Option Is Leveraged"
+# No Results 0
+# Description There are several options available to limit which users and group can access the system via
+# SSH. It is recommended that at least of the following options be leveraged: AllowUsers, Allow
+# Groups, DenyUsers, DenyGroups.
+# Rules System Configuration Files
+# Element Equals "/etc/ssh/sshd_config"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*(
+# ?:AllowUsers|AllowGroups|DenyUsers|DenyGroups)[\ \t]+\w+.*$/ (Flags:Multiline,Case insen
+# sitive,Comments mode) Access via SSH Setting Exists
+# Remediation To remediate failure of this policy test, configure the SSH server to limit which users and
+# group can access the system via SSH.
+# Configuring the SSH server to limit which users and group can access the system via
+# SSH:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/ssh/sshd_config file.
+# 3. Adding at least of the following options:
+# AllowUsers <user_list>
+# AllowGroups <group_list>
+# DenyUsers <user_list>
+# DenyGroups <group_list>
+# where <user_list> and <group_list> is a list of user name or group name patterns,
+# separated by comma.
+# 4. Save the file.
+# 5. Run the pkill -HUP sshd or /sbin/service sshd restart commands to restart the
+# sshd service.
+# For further details, please run the command man sshd_config to read man page.
+#!/bin/bash
+FileName="/etc/ssh/sshd_config"
+LINE=`/bin/cat "$FileName" | grep AllowUsers`
+if [ -e "$LINE" ]; then 
+   echo" the following Users are allowed to ssh"
+   echo "$LINE"
+   exit
+fi
+
+LINE=`/bin/cat "$FileName" | grep AllowGroups`
+if [ -e "$LINE" ]; then
+  echo" the following Groups are allowed to ssh"
+  echo "$LINE"
+  exit
+fi
+
+LINE=`/bin/cat "$FileName" | grep DenyUsers`
+if [ -e "$LINE" ]; then
+   echo" the following Users are Denined to ssh"
+   echo "$LINE"
+   exit
+fi
+LINE=`/bin/cat "$FileName" | grep DenyGroups`
+if [ -e "$LINE" ]; then
+   echo" the following Groups are Denined to ssh"
+   echo "$LINE"
+   exit
+fi
+
+echo "Please Review the /etc/ssh/sshd_config file  and Add at least of the following options:
+AllowUsers <user_list>
+AllowGroups <group_list>
+DenyUsers <user_list>
+DenyGroups <group_list>
+where <user_list> and <group_list> is a list of user name or group name patterns,separated by comma."
+echo " "
+echo " Run  /sbin/service sshd restart to restart ssh service"
+

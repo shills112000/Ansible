@@ -1,0 +1,25 @@
+TestDesc="Status Severity Time Verify That the avahi-daemon Service Is Disabled No Results 0"
+# Description This test verifies that the avahi-daemon service is disabled. All system daemons that do not
+# have a clear and necessary purpose should be disabled. This greatly reduces the odds that a
+# vulnerable system daemon will be targeted by an attack when an operating system vulnerabil
+# ity is discovered.
+# Rules Service Status for RHEL 7
+# Element Equals "Service Status for RHEL 7"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*a
+# vahi-daemon\.service[\ \t]+(\S+)[\ \t]*$/ (Flags:Multiline,Comments mode) avahi-daemon Ser
+# vice Status Not equal "enabled"
+# Remediation To remediate failure of this policy test, disable the avahi-daemon service.
+# Disabling the avahi-daemon service:
+# 1. Become superuser or assume an equivalent role.
+# 2. Disable the avahi-daemon service using the /usr/bin/systemctl disable avahi-dae
+# mon command.
+# For further details, please run the command man systemctl to read man page.
+if [ `/usr/bin/systemctl list-unit-files|egrep avahi-daemon.service|egrep enabled|wc -l` -eq 1 ]; then
+        echo "Failure - avahi-daemon is enabled"
+        echo "disabling avahi-daemon"
+        /usr/bin/systemctl disable avahi-daemon
+        exit $?
+else
+        echo "everything is ok - avahi-daemon is not enabled"
+        exit 0
+fi

@@ -1,0 +1,22 @@
+TestDesc="Status Severity Time Verify That crond Daemon Is Enabled No Results 0"
+# Description The crond daemon is used to execute batch jobs on the system. While there may not be user
+# jobs that need to be run on the system, the system does have maintenance jobs that may in
+# clude security monitoring that have to run and cron is used to execute them.
+# Rules Service Status for RHEL 7
+# Element Equals "Service Status for RHEL 7"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*c
+# rond\.service[\ \t]+(\S+)[\ \t]*$/ (Flags:Multiline,Comments mode) crond Service Status Equals
+# "enabled"
+# Remediation To remediate failure of this policy test, turn on the crond daemon.
+# Turning on the crond daemon:
+# 1. Become superuser or assume an equivalent role.
+# 2. Turn on the crond daemon using the /usr/bin/systemctl enable crond command.
+# For further details, please run the command man systemctl to read man page.
+if [ `/usr/bin/systemctl list-unit-files|egrep crond.service|egrep enabled|wc -l` -eq 1 ]; then
+        echo "everything is ok - crond is enabled"
+else
+        echo "Failure - crond is not enabled"
+        echo "enabling crond"
+        /usr/bin/systemctl enable crond
+        exit $?
+fi

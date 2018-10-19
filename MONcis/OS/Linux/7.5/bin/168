@@ -1,0 +1,28 @@
+TestDesc="Status Severity Time Verify That sshd_config Contains 'LogLevel INFO' No Results 0"
+# Description This test verifies that the local SSH server contains 'LogLevel INFO'. The option LogLevel
+# specifies the level that is used when logging messages from sshd.
+# Rules System Configuration Files
+# Element Equals "/etc/ssh/sshd_config"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*L
+# ogLevel[\ \t]+(\w+)[\ \t]*$/ (Flags:Multiline,Comments mode) (LogLevel Equals "INFO" AND
+# SSH Server LogLevel Setting Exists ) OR SSH Server LogLevel Setting Does not exist
+# Remediation To remediate failure of this policy test, set the verbosity level that is used when logging mes
+# sages from sshd to INFO.
+# Setting the verbosity level that is used when logging messages from sshd to INFO:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/ssh/sshd_config file.
+# 3. Find the line that contains LogLevel <value>.
+# 4. Set the <value> to INFO and save the file.
+# 5. Run the service sshd restart command to apply the change.
+# For further details, please run the command man sshd_config to read man page.
+if [ `/usr/bin/sed -n -e '/^[\ \t]*LogLevel[\ \t]\+\w\+.*$/p' /etc/ssh/sshd_config |wc -l` -eq 0 ]; then
+        echo "Failure - LogLevel is not set or is not set "
+        echo "Edit /etc/ssh/sshd_config"
+        echo "Find the line that contains LogLevel value"
+	echo "Set the value to INFO and save the file."
+        echo "service sshd restart"
+        exit $?
+else
+        echo "everything is ok - LogLevel for sshd is set"
+fi
+        exit 0

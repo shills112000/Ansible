@@ -1,0 +1,28 @@
+TestDesc="Status Severity Time Verify That a /var Partition Is in the /etc/fstab File No Results 0"
+# Description The /var directory is used by daemons and other system services to temporarily store dynam
+# ic data. Some directories created by these processes may be world-writable. Creating a sepa
+# rate partition for /var avoids a risk of resource exhaustion.
+# Rules System Configuration Files
+# Element Equals "/etc/fstab"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[^\#\n]*[\
+# \t]+/var[\ \t]+.*$/ (Flags:Multiline,Comments mode) /var Entry Exists
+# Remediation To remediate failure of this policy test, create a separate partition for /var.
+# Creating a separate partition for /var:
+# 1. For new installations, check the box to "Review and modify partitioning" and create
+# a separate partition for /var.
+# 2. For systems that were previously installed, use the Logical Volume Manager (LVM)
+# to create partitions.
+# For further details, see the guidance on the Logical Volume Manager (LVM) for more informa
+# tion on repartitioning filesystems:
+# http://tldp.org/HOWTO/LVM-HOWTO/
+if [ `sed -n -e '/^\/.*.[\ \t]\/var[\ \t]\+.*$/p' /etc/fstab| wc -l` -gt 0 ]; then
+        echo "everything ok - /var appears to be on its own filesystem"
+        exit 0
+else
+        echo "Failure - /var is not on its own filesystem"
+        echo "For systems that were previously installed, use the Logical Volume Manager (LVM)"
+        echo " For further details, see the guidance on the Logical Volume Manager (LVM) for more information on reparti
+tioning filesystems:"
+        echo " http://tldp.org/HOWTO/LVM-HOWTO/"
+        echo $?
+fi

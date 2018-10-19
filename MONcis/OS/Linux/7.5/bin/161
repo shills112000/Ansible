@@ -1,0 +1,65 @@
+TestDesc="Verify That net.ipv4.icmp_ignore_bogus_error_responses Is Equal to 1 (Runtime Status)"
+# No Results 0
+# Description This test checks that the net.ipv4.icmp_ignore_bogus_error_responses parameter is set to
+# true.
+# Some routers violate RFC1122 by sending bogus responses to broadcast frames. Such viola
+# tions are normally logged via a kernel warning. If this is set to true (set to 1), the kernel will not
+# give such warnings, which will avoid log file clutter.
+# Rules Kernel Parameters
+# Element Equals "Kernel Parameters"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^/proc/
+# sys/net/ipv4/icmp_ignore_bogus_error_responses:[\ \t]*(\d+)[\ \t]*$/ (Flags:Multiline,Comments
+# mode) net.ipv4.icmp_ignore_bogus_error_responses Equals 1
+# Remediation To remediate failure of this policy test, set the network parameter to ignore ICMPv4 bogus er
+# ror responses.
+# Setting the network parameter to ignore ICMPv4 bogus error responses:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/sysctl.conf file.
+# 3. Find the line net.ipv4.icmp_ignore_bogus_error_responses = <value>.
+# 4. Set the line to net.ipv4.icmp_ignore_bogus_error_responses = 1 and save the file.
+# 5. If there is no line setting net.ipv4.icmp_ignore_bogus_error_responses, add the
+# following line:
+# net.ipv4.icmp_ignore_bogus_error_responses = 1
+# at the end of the file and save it.
+# 6. Run the sysctl -p command to apply the change.
+# For further details, please refer to:
+# https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/
+# Deployment_Guide/s1-proc-sysctl.html
+#!/bin/bash
+# initialize Variables
+FileName="/etc/sysctl.conf"
+Line="net.ipv4.icmp_ignore_bogus_error_responses = 1"
+# Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+        exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo "FAILURE-1002: [$FileName] file/directory does not exist"
+    exit 1002
+ fi
+ # Issue the command to add line to the file
+sed -i 's/net.ipv4.icmp_ignore_bogus_error_responses /# pv4.icmp_ignore_bogus_error_responses /g' "$FileName"
+ AddLog=`(/bin/echo "$Line" >> $FileName) 2>&1`
+ if [ -n "$AddLog" ]; then
+    /bin/echo "FAILURE-6001: Could not add [$Line] line to [$FileName] file"
+    exit 6001
+ fi
+ /bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+ /bin/echo "Restarting sshd service"
+ sysctl -p
+ exit 6003
+

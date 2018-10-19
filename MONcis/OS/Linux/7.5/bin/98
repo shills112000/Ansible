@@ -1,0 +1,67 @@
+TestDesc="Verify That No Legacy '+' Entries Exist in /etc/shadow"
+# shadow
+# No Results 0
+# Description This test verifies that no legacy '+' entries exist in /etc/shadow. At one time, '+' entries were
+# employed as markers for systems to insert data from NIS maps. These entries can serve as a
+# way for attackers to gain privileged access on the system, and should be removed if they ex
+# ist.
+# Rules System Configuration Files
+# Element Equals "/etc/shadow"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ \t]*\
+# +.*/ (Flags:Multiline,Case insensitive,Comments mode) Legacy '+' Entries Does not exist
+# Remediation To remediate failure of this policy test, remove or comment out legacy '+' entries in the /etc/
+# shadow file.
+# Removing or commenting out legacy '+' entries in the /etc/shadow file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/shadow file.
+# 3. Find lines those contains the plus signs at the beginning.
+# 4. Remove or comment out lines and save the file.
+#!/bin/bash
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+ # Initialize Variables
+FileName="/etc/shadow"
+# Check if + entry exists
+ IsExisted=`/bin/egrep "^[[:space:]]*\+" $FileName 2>/dev/null`
+ if [ -z "$IsExisted" ]; then
+    /bin/echo "SUCCESS-7001: There is no [+] entry in [$FileName] file"
+    exit 0
+ fi
+ # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="$TW_REMEDIATION_BACKUP_DIR$DirName"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+    fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1` 
+    if [ -n "$CopyLog" ]; then
+       /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+       exit 1007
+    fi
+  fi
+ # Issue the command to remove entry
+ CommentEntry=`(/bin/awk '$1 !~ /^\+/ \
+ {print}' "$BackupName" > "$FileName") 2>&1`
+ if [ -n "$CommentEntry" ]; then
+    /bin/echo "FAILURE-7001: Could not remove [+] entry in [$FileName] file"
+# Rollback to the original file
+   /bin/cp -f "$BackupName" "$FileName" 2>/dev/null
+   exit 7001
+ fi
+ /bin/echo "SUCCESS-7001: Removed [+] entry in [$FileName] file"
+ exit 0
+# # AR_ACTION = RHEL_OTHERS
+# # AR_COMPLETION = COMPLETION_NONE
+# # AR_TEST_ID = T0003388
+# # AR_TEST_NAME = Verify That No Legacy '+' Entries Exist in /etc/
+# shadow
+# Post Remediation Category None
+# Post Remediation Steps No additional Post Remediation steps
+# Remediated Elements None

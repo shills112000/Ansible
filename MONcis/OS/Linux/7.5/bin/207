@@ -1,0 +1,26 @@
+TestDesc="Status Severity Time Verify That the ypbind Package Is Removed No Results 0"
+# Description The Network Information Service (NIS), formerly known as Yellow Pages, is a client-serv
+# er directory service protocol used to distribute system configuration files. The NIS client (yp
+# bind) was used to bind a machine to an NIS server and receive the distributed configuration
+# files. The NIS service is inherently an insecure system that has been vulnerable to DOS at
+# tacks, buffer overflows and has poor authentication for querying NIS maps. NIS generally has
+# been replaced by such protocols as Lightweight Directory Access Protocol (LDAP). It is rec
+# ommended that the service be removed.
+# Rules List of Installed Packages
+# Element Equals "installed packages"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*y
+# pbind-\d.*$/ (Flags:Multiline,Comments mode) ypbind Does not exist
+# Remediation To remediate failure of this policy test, erase ypbind package.
+# Erasing ypbind package:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the yum erase ypbind command to remove ypbind package.
+# For further details, please run the command man yum to read man page.
+if [ `/usr/bin/rpm -qa| /usr/bin/sed -n -e '/^[\ \t]*ypbind-[0-9].*$/p'|wc -l` -gt 0 ];  then
+        echo "ypbind found removing package"
+        /usr/bin/yum erase ypbind
+        exit $?
+else
+        echo "everything is Ok - no ypbind package found"
+        exit 0
+fi
+

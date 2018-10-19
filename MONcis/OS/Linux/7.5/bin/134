@@ -1,0 +1,81 @@
+TestDesc=" Verify That audit Logging Is Enabled to Log Write and Attribute Change Events Relating to the /etc/selinux Directory and It's Sub-directories"
+# Write and Attribute Change Events Relating to
+# the /etc/selinux Directory and It's Sub-directo
+# ries
+# No Results 0
+# Description This test verifies that /etc/audit/audit.rules contains the '-w /etc/selinux/ -p wa -k MAC-policy'
+# option.
+# It is important to maintain an audit trail in order to thoroughly track and analyze system activity
+# when something goes wrong.
+# Rules System Configuration Files
+# Element Equals "/etc/audit/audit.rules"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ ]*
+# -w[\ ]+/etc/selinux/[\ ]+(?=.*-p[\ ]+wa\b)(?=.*-k[\ ]+MAC-policy\b).*/ (Flags:Multiline,Comments
+# mode) audit Line for Logging Write and Attribute Change Events Relating to the /etc/selinux
+# Directory and It's Sub-directories Exists
+# Remediation To remediate failure of this policy test, configure the system to audit events that modify the
+# system's network environment.
+# Configuring the system to audit events that modify the system's network environment
+# on RHEL 5, 6:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/audit.rules file.
+# 3. Find the line that contains the -w /etc/selinux/ -p wa -k MAC-policy entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Configuring the system to audit events that modify the system's network environment
+# on RHEL 7:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/rules.d/audit.rules file.
+# 3. Find the line that contains the -w /etc/selinux/ -p wa -k MAC-policy entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# For further details, please run the command man auditctl to read man page.
+# Command Line /bin/sh $(ScriptFile.sh)
+# /bin/sh 
+ # Initialize Variables
+ FileName="/etc/audit/audit.rules"
+ Line="-w /etc/selinux/ -p wa -k MAC-policy"
+ # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+    fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+       /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+       exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+ # Issue the command to add line to the file
+ AddLog=`(/bin/echo "$Line" >> $FileName) 2>&1`
+ if [ -n "$AddLog" ]; then
+     /bin/echo "FAILURE-6001: Could not add [$Line] line to [$FileName] file"
+     exit 6001
+ fi
+ /bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+ exit 0
+ # AR_ACTION = RHEL_LINE_SETTING
+ # AR_COMPLETION = COMPLETION_RELOAD_SERVICE auditd
+ # AR_TEST_ID = T0015509
+ # AR_TEST_NAME = '-w /etc/selinux/ -p wa -k MAC-policy' Option
+ # AR_FINAL_STEPS = To complete this remediation:
+ # AR_FINAL_STEPS = <ol><li>Become superuser or assume an equivalent
+# role.</li><li>Run the <b>/etc/init.d/auditd reload</b> command to
+# reload the filters.</li>
+ # AR_FINAL_STEPS = </ol>
+# Post Remediation Category Reload Configuration "auditd"
+# Post Remediation Steps To complete this remediation:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the /etc/init.d/auditd reload command to reload the filters.
+# Remediated Elements None

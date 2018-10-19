@@ -1,0 +1,82 @@
+TestDesc="For 32 Bit Architecture: Verify That audit Logging Is Enabled on the mount Events by Users"
+# ging Is Enabled on the mount Events by Users
+# No Results 0
+# Description This test verifies that /etc/audit/audit.rules contains the '-a always,exit -F arch=b32 -S mount -
+# F auid>=500 -F auid!=4294967295 -k mounts' option.
+# It is important to maintain an audit trail in order to thoroughly track and analyze system activity
+# when something goes wrong.
+# Rules System Configuration Files
+# Element Equals "/etc/audit/audit.rules"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ ]*
+# -a[\ ]+(?=\S*\bexit\b)(?=\S*\balways\b)(?!\S*\bentry\b)(?!\S*\bnever\b)\S*[\ ]+(?=.*-F[\ ]+arch=
+# b32\b)(?=.*-S[\ ]+mount\b)(?=.*-F[\ ]+auid>=500\b)(?=.*-F[\ ]+auid!=4294967295\b)(?=.*-k[\ ]+
+# mounts\b).*$/ (Flags:Multiline,Comments mode) audit Line for Logging the mount Events by
+# Users Exists
+# Remediation To remediate failure of this policy test, configure system to audit successful file system mount
+# s.
+# Configuring system to audit successful file system mounts on RHEL 5, 6:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b32 -S mount -F auid>=500 -F
+# auid!=4294967295 -k mounts entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Configuring system to audit successful file system mounts on RHEL 7:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/rules.d/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b32 -S mount -F auid>=500 -F
+# auid!=4294967295 -k mounts entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# For further details, please run the command man auditctl to read man page.
+
+#!/bin/bash
+# initialize Variables
+File6="/etc/audit/audit.rules"
+File7="/etc/audit/rules.d/audit.rules"
+Release=`/bin/cat /etc/redhat-release |grep "release 7"`
+Line="-a always,exit -F arch=b32 -S mount -F auid>=500 -F auid!=4294967295 -k mounts"
+#
+# Check OS version and set config file location
+if [ -n "$Release" ]; then
+# sets file for RHEL 7
+  echo "$Release"
+  FileName="$File7"
+else
+# sets file for RHEL 5 and 6
+  echo "Release 6"
+  FileName="$File6"
+fi
+#
+# Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+ # Issue the command to add line to the file
+ AddLog=`(/bin/echo "$Line" >> $FileName) 2>&1`
+ if [ -n "$AddLog" ]; then
+    /bin/echo "FAILURE-6001: Could not add [$Line] line to [$FileName] file"
+    exit 6001
+ fi
+/bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+/bin/echo "restarting service to apply changes"
+service auditd restart
+exit 6003

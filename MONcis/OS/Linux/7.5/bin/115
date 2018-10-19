@@ -1,0 +1,27 @@
+TestDesc="Status Severity Time Verify That a /home Partition Is in the /etc/fstab File No Results 0"
+# Description The /home directory is used to support disk storage needs of local users. If the system is in
+# tended to support local users, create a separate partition for the /home directory to protect
+# against resource exhaustion and restrict the type of files that can be stored under /home.
+# Rules System Configuration Files
+# Element Equals "/etc/fstab"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[^\#\n]*[\
+# \t]+/home[\ \t]+.*$/ (Flags:Multiline,Comments mode) /home Entry Exists
+# Remediation To remediate failure of this policy test, create separate a partition for /home.
+# Creating a separate partition for /home:
+# 1. For new installations, check the box to "Review and modify partitioning" and create
+# a separate partition for /home.
+# 2. For systems that were previously installed, use the Logical Volume Manager (LVM)
+# to create partitions.
+# For further details, see the guidance on the Logical Volume Manager (LVM) for more informa
+# tion on repartitioning filesystems:
+# http://tldp.org/HOWTO/LVM-HOWTO/
+if [ `sed -n -e '/^\/.*.[\ \t]\/export\/home[\ \t]\+.*$/p' /etc/fstab| wc -l` -gt 0 ]; then
+        echo "everything ok - /export/home appears to be on its own filesystem"
+        exit 0
+else
+        echo "Failure - /export/home is not on its own filesystem"
+        echo "For systems that were previously installed, use the Logical Volume Manager (LVM)"
+        echo " For further details, see the guidance on the Logical Volume Manager (LVM) for more information on repartitioning filesystems:"
+        echo " http://tldp.org/HOWTO/LVM-HOWTO/"
+        echo $?
+fi

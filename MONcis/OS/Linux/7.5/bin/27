@@ -1,0 +1,114 @@
+TestDesc=" Password Character Mix: At Least a Lower case Character"
+# case Character
+# No Results 0
+# Description This test verifies that passwords include at least a lowercase alphabetic character. Forcing
+# users to use complex passwords makes it more difficult for attackers to gain access to the
+# system.
+# Rules Get /etc/pam.d/system-auth Content
+# Element Equals "/etc/pam.d/system-auth_content"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*p
+# assword[\ \t]+(?:requisite|required)[\ \t]+[^\#&&\S]*\bpam_cracklib\.so[\ \t]+[^\#\n]*\blcredit=-(\d
+# +)\b.*/ (Flags:Multiline,Comments mode) Minimum of Lowercase Password Characters Great
+# er than or equal 1
+# Remediation To remediate failure of this policy test, set the required minimum number of lower case char
+# acters to at least 1.
+# Setting the required minimum number of lower case characters to at least 1:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/pam.d/system-auth file.
+# 3. Find the line that contains:
+# password <control flag> [security_path/]pam_cracklib.so [other
+# parameters]
+# where the <control flag> is required or requisite.
+# 4. If the line is found, find the parameter lcredit=<value>:
+# • If the parameter is found, then change the <value> to -1 or less.
+# • If the parameter is not found, then add the lcredit=<value> parameter to the
+# line where the <value> is set to -1 or less.
+# 5. If the line is not found, review the file then edit or add some entries if needed to make
+# sure that the file contains the following ordered lines:
+# password requisite [security_path/]pam_cracklib.so lcred
+# it=<value> [other parameters]
+# password sufficient [security_path/]pam_unix.so use_authto
+# k [other parameters]
+# password required [security_path/]pam_deny.so
+# where the <value> is set to -1 or less.
+# 6. Save the file.
+# For further details, please refer to:
+# RHEL 5:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html/Deployment_Guide/s1-
+# pam-sample-simple.html
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Deployment
+# _Guide/index.html#s1-pam-config-files
+# RHEL 6:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Managing_Smart_
+# Cards/PAM_Configuration_Files.html
+# RHEL 7:
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html-sin
+# gle/System-Level_Authentication_Guide/#PAM_Configuration_Files
+#!/bin/bash
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+# # Initialize Variables
+ FileName="/etc/pam.d/system-auth"
+ Parameter="lcredit"
+ Value="-1"
+ Module="pam_cracklib.so"
+ Regex="^[[:space:]]*password[[:space:]]+(requisite|required) [[:space:]]+([^\#]+\/)?pam_cracklib\.so"
+ ParameterRegex="\<${Parameter}=-?[0-9]+\>"
+ ExistedPamCrackLib=`/bin/egrep "${Regex}" $FileName 2>/dev/null`
+ if [ -z "$ExistedPamCrackLib" ]; then
+    /bin/echo "FAILURE-7001: [$Module] module is not plugged into the [$FileName] file"
+     exit 7001
+ fi
+ # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+     BackupName="$FullPath/${BaseName}.tecopy"
+     CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+     if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+     fi
+  fi
+  IsExisted=`(/bin/echo $ExistedPamCrackLib | /bin/awk -F"#" '{print$1}' | /bin/egrep "${ParameterRegex}") 2>&1`
+ # Issue the command to change a field
+ if [ -n "$IsExisted" ]; then
+    UpdateLog=`(/bin/awk -F"#" 'BEGIN{OFS="#"} $1 ~ /'$Regex'/ {gsub(/'$ParameterRegex'/,"'$Parameter'='$Value'",$1)}{print}' "$BackupName" > "$FileName") 2>&1`
+    if [ -n "$UpdateLog" ]; then
+       /bin/echo "FAILURE-7001: Could not change value of [$Parameter] field to [$Value] in [$FileName] file"
+# Rollback to the original file
+       /bin/cp -f ${BackupName} $FileName 2>/dev/null
+       exit 7001
+    fi
+    /bin/echo "SUCCESS-7001: Value of [$Parameter] field changed to [$Value] in [$FileName] file"
+ else
+    AddLog=`(/bin/awk -F"#" '$0 ~ /'"$Regex"'/\
+ {if (NF == 1) $0 = $1" '"$Parameter=$Value"'";
+ else $0 = $1" '"$Parameter=$Value"'#"$2;} {print}' \
+ ${BackupName} > ${FileName}) 2>&1`
+ if [ -n "$AddLog" ]; then
+    /bin/echo "FAILURE-7001: Could not add [$Parameter=$Value] field to [$FileName] file"
+ # Rollback to the original file
+ /bin/cp -f ${BackupName} $FileName 2>/dev/null
+ exit 7001
+ fi
+ /bin/echo "SUCCESS-7001: [$Parameter=$Value] field added to [$FileName] file"
+ fi
+ exit 0
+# # AR_ACTION = RHEL_OTHERS
+# # AR_COMPLETION = COMPLETION_NONE
+# # AR_TEST_ID = T0019063
+# # AR_TEST_NAME = Password Character Mix: At Least a Lowercase
+# Character
+# Post Remediation Category None
+# Post Remediation Steps No additional Post Remediation steps
+# Remediated Elements /etc/pam.d/system-auth
+# /etc/pam.d/system-auth-ac

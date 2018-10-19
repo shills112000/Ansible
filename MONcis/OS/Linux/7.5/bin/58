@@ -1,0 +1,33 @@
+TestDesc="Verify Default umask for Users in /etc/profile.d/*"
+# Description This test verifies that the default umask in /etc/profile.d/* is set to 077. The umask value influ
+# ences the permissions assigned to files when they are created. A misconfigured umask value
+# could result in files with excessive permissions that can be read and/or written to by unautho
+# rized users.
+# Rules umask in /etc/profile.d/*
+# Element Equals "/etc/profile.d/*"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^.*not[\
+# \t]+set.*$/ (Flags:Multiline,Comments mode) Default umask Setting Deviation Does not exist
+# Remediation To remediate failure of this policy test, set the default umask to 077 for global initialization
+# files.
+# Setting the default umask to 077 for global initialization files:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the following command:
+# for FileName in /etc/profile.d/*; do if [ ! "`/bin/egrep '^[[:space:]]*u
+# mask[[:space:]]*0*77[[:space:]]*($|#)' $FileName 2>/dev/null`" ];
+# then /bin/echo $FileName; fi ;done
+# to list the files that do not contain the umask 077.
+# 3. Open each file listed in step 2, find the line that contains the umask <value> line.
+# • If found, replace the <value> to 077.
+# • If not found, add the line umask 077 to the file.
+# 4. Close and save the file.
+# For further details, please run the command man 2 umask to read man page.
+RSTATUS=0
+for FileName in /etc/profile.d/*; do
+	if [ `sed -n -e '/^umask.*.077.*$/p' $FileName | wc -l ` -gt 0 ]; then 
+		/bin/echo "everything OK - umaks is set to 077 in $FileName"
+	else
+		/bin/echo "Failure - umask not set to 077 in $FileName"
+		RSTATUS=1
+	fi
+done
+exit $RSTATUS

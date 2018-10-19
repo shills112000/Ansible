@@ -1,0 +1,67 @@
+TestDesc="Verify That ClientAliveCountMax Is Set to 0"
+# Node: mon06-uk-gs2-fim-01 (Linux Server)
+# Test Status Severity Time
+# No Results 0
+# Description This tests verifies that the SSH daemon is set a timeout count on idle sessions. This ensures
+# a user login will be terminated as soon as the ClientAliveCountMax is reached. It is recom
+# mended that ClientAliveCountMax is set to 0.
+# Rules System Configuration Files
+# Element Equals "/etc/ssh/sshd_config"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*C
+# lientAliveCountMax[\ \t]+(\d+)[\ \t]*$/ (Flags:Multiline,Case insensitive,Comments mode) Clien
+# tAliveCountMax Equals 0
+# Remediation To remediate failure of this policy test, configure the SSH server to set the number of client
+# alive messages which may be sent without sshd receiving any messages back from the client
+# equals to 0.
+# Configuring the SSH server to set the number of client alive messages which may be
+# sent without sshd receiving any messages back from the client equals to 0:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/ssh/sshd_config file.
+# 3. Find the line ClientAliveCountMax <value>.
+# 4. Set <value> to 0 and save the file.
+# 5. Run the pkill -HUP sshd or /sbin/service sshd restart commands to restart the
+# sshd service.
+# For further details, please run the command man sshd_config to read man page.
+#!/bin/bash
+# initialize Variables
+FileName="/etc/ssh/sshd_config"
+TempFile="sshd_conf_tmp"
+Line="ClientAliveCountMax 0"
+sline="ClientAliveCountMax"
+Linec=`cat -n $FileName | grep "$sline" | awk '{print $1}'`
+Linec=$(( $Linec + 0 ))
+if [ $Linec -eq 0 ]; then
+ Linec=1
+fi
+
+# # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+sed -i 's/ClientAliveCountMax/#ClientAliveCountMax/g' "$FileName"
+sed -e ''$Linec's/$/\n ClientAliveCountMax 0/' "$FileName" > "$TempFile"
+sed -i 's/ ClientAliveCountMax 0/ClientAliveCountMax 0/g' "$TempFile"
+/bin/cp -f "$TempFile" "$FileName" 2>&1
+/bin/echo "SUCCESS-6003: [$Line] line updated in [$FileName] file"
+/bin/echo "restarting service to apply changes"
+/sbin/service sshd restart
+exit 6003
+

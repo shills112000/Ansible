@@ -1,0 +1,81 @@
+TestDesc=" Verify That an Audit Line for Each setuid/setgid Program Appears in the Audit File"
+# gid Program Appears in the Audit File
+# No Results 0
+# Description Execution of privileged commands by non-privileged users could be an indication of someone
+# trying to gain unauthorized access to the system.
+# Monitor privileged programs (those that have the setuid and/or setgid bit set on execution) to
+# determine if unprivileged users are running these commands.
+# Rules Audit Line for setuid/setgid Programs
+# Element Equals "Audit Line for setuid/setgid Programs"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /.+/
+# (Flags:Case insensitive) Privileged Programs without Audit Line Does not exist
+# Remediation To remediate failure of this policy test, configure each setuid/setgid program has an audit line
+# in the audit file.
+# Adding an audit line for each setuid/setgid program appears in the audit file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the following script to list all the setuid/setgid programs which have not audit line
+# in the audit file:
+# FileNames=`/usr/bin/find / -xdev \( -perm -4000 -o -perm -2000 \) -type f 2>/dev/null`;if [ -n "$FileNames" ]; then
+# for FileName in $FileNames; do Regex="`/bin/echo $FileName | /bin/sed 's/[\.\/]/\\\&/g'`"; 
+# IsExisted=`/sbin/auditctl -l 2>/dev/null |/bin/awk '$0 ~ /^[[:space:]]*LIST_RULES[[:space:]]*:[[:space:]]*exit,always/ && $0 ~ /[[:space:]]
+# watch='"$Regex"'[[:space:]]+/ && $0 ~ /[[:space:]]perm=[[:graph:]]*x[[:graph:]]*[[:space:]]+/ && $0 ~ /[[:space:]]auid>=500[[:space:]]+/
+# && $# 0 ~ /[[:space:]]f24!=0[[:space:]]+ {print $0}'`;
+# if [ -z "$IsExisted" ]; then 
+#/bin/echo "$FileName";
+# fi;
+# done;
+#fi
+# 3. Open the /etc/audit/rules.d/audit.rules file.
+# 4. For each <FileName> listed in the step 2, add the following entry to the end of file:
+# -a always,exit -F path=<FileName> -F perm=x -F auid>=500 -F
+# auid!=4294967295 -k privileged
+# 5. Save the file.
+# 6. Run the /sbin/service auditd restart command to apply the change.
+# For further details, please run the command man auditctl to read man page.
+FileNames=`/usr/bin/find / -xdev \( -perm -4000 -o -perm -2000 \) -type f 2>/dev/null`;
+ if [ -n "$FileNames" ]; then
+    for FileName in $FileNames; do 
+       Regex="`/bin/echo $FileName | /bin/sed 's/[\.\/]/\\\&/g'`";
+#       IsExisted=`/sbin/auditctl -l 2>/dev/null 
+#| /bin/awk ' $0 ~/^[[:space:]] *LIST_RULES[[:space:]]*:[[:space:]]*exit,always/ && $0 ~ /[[:space:]]watch='"$Regex"'[[:space:]]+/ && $0 ~ /[[:space:]]perm=[[:graph:]]*x[[:graph:]]*[[:space:]]+/ && $0 ~/[[:space:]]auid>=500[[:space:]]+/ && $0 ~/[[:space:]]f24!=0[[:space:]]+ {print $0}'`;
+if [ -z "$IsExisted" ]; then 
+/bin/echo "$FileName";
+ fi
+ done
+fi
+#
+AuditFileName="/etc/audit/rules.d/audit.rules"
+#
+#backup the file before updating
+ if [ -e "$AuditFileName" ]; then
+    BaseName=`/bin/basename "$AuditFileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$AuditFileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$AuditFileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$AuditFileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$AuditFileName] file/directory does not exist
+    exit 1002
+ fi
+
+for FileName in $FileNames; do
+    Line="-a always,exit -F path="
+    Line2=SFileName
+    Line3=" -F perm=x -F auid>=500 -F auid!=4294967295 -k privileged"
+    FullLine=$Line$FileName$Line3
+   /bin/echo $FullLine >> "$AuditFileName"
+done
+echo " Restarting Auditd Service "
+/sbin/service auditd restart 
+exit 0

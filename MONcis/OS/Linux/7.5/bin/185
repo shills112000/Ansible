@@ -1,0 +1,23 @@
+TestDesc="Status Severity Time # Verify That the auditd Service Is Enabled No Results 0"
+# Description This test determines whether the auditd daemon is in a running state. This setting supports
+# service availability and host/network integrity by ensuring that specific user/process actions
+# are being audited.
+# Rules Service Status for RHEL 7
+# Element Equals "Service Status for RHEL 7"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*a
+# uditd\.service[\ \t]+(\S+)[\ \t]*$/ (Flags:Multiline,Comments mode) auditd Service Status Equals
+# "enabled"
+# Remediation To remediate failure of this policy test, turn on the auditd service.
+# Turning on the auditd service:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the /usr/bin/systemctl enable auditd command to keep the auditd service
+# turned on in the next reboot.
+# For further details, please run the command man systemctl to read man page.
+if [ `/usr/bin/systemctl list-unit-files|egrep auditd.service|egrep enabled|wc -l` -eq 1 ]; then
+        echo "everything is ok - auditd is enabled"
+else
+        echo "Failure - auditd is not enabled"
+	echo "enabling audited"
+	/usr/bin/systemctl enable auditd
+	exit $?
+fi

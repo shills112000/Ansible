@@ -1,0 +1,32 @@
+TestDesc="Verify Log Files Permissions in /etc/rsyslog.conf"
+# No Results 0
+# Description A log file must already exist for syslog to be able to write to it.
+# It is important to ensure that log files exist and have the correct permissions to ensure that
+# sensitive syslog data is archived and protected.
+# Rules Verify rsyslog Log Files Permissions
+# Element Equals "Verify rsyslog Log Files Permissions"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /.+/
+# (Flags:Case insensitive) rsyslog Log Files Permissions Deviation Does not exist
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the
+# rsyslog log files.
+# Setting appropriate permissions and ownership on the rsyslog log files:
+# 1. Become superuser or assume an equivalent role.
+# 2. Using the following script to list all the rsyslog log files in the /etc/rsyslog.conf file:
+# /bin/awk -F "#" '$1 !~ /^[[:space:]]*\$/ && $1 !~ /\*[[:space:]]*$/ &&
+# $1 !~ /^[[:space:]]*$/{ split($1,a," "); gsub(/-/,"",a[2]); if(a[2] !~ /^@/
+# && a[2] ~ /^[[:space:]]*\//){ print a[2];} }' /etc/rsyslog.conf 2>/dev/
+# null
+# 3. Run the command touch <LOGFILE> to create the files if they do not exist.
+# 4. For sites that have not implemented a secure admin group, for each <LOGFILE> list
+# ed in the step 2, perform the following commands:
+# chown root:root <LOGFILE>
+# chmod u-x,og-rwx <LOGFILE>
+# 5. For sites that have implemented a secure admin group, for each <LOGFILE> listed in
+# the step 2, perform the following commands:
+# chown root:<SECURE_GROUP> <LOGFILE>
+# chmod u-x,g-wx,o-rwx <LOGFILE>
+# where <SECURE_GROUP> is the name of the security group.
+#!/bin/bash
+echo " set appropriate permissions and ownership on the rsyslog log files"
+/bin/awk -F "#" '$1 !~ /^[[:space:]]*\$/ && $1 !~ /\*[[:space:]]*$/ && $1 !~ /^[[:space:]]*$/{ split($1,a," "); gsub(/-/,"",a[2]);
+ if(a[2] !~ /^@/ && a[2] ~ /^[[:space:]]*\//){ print a[2];} }' /etc/rsyslog.conf 2>/dev/null

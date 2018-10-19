@@ -1,0 +1,25 @@
+TestDesc=" Status Severity Time Verify /etc/shadow Permissions No Results 0"
+# Description This test verifies that the 'root' user owns /etc/shadow and permissions are equal to 000.
+# It is worthwhile to periodically check these file permissions as there have been package de
+# fects that changed /etc/shadow permissions to 000.
+# Rules System Configuration Files
+# Element Equals "/etc/shadow"
+# Version conditions Action if missing:Pass User Matches "^root[\ \t]+\(\d+\)[\ \t]*$" AND Group Matches "^root[\
+# \t]+\(\d+\)[\ \t]*$" AND Permissions Matches "^-{10}.*$"
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the /etc/
+# shadow file.
+# Setting appropriate permissions and ownership on the /etc/shadow file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Check the permissions and ownership of the file using the ls -lL /etc/shadow com
+# mand.
+# 3. Change permissions to 000 using the chmod 000 /etc/shadow command.
+# 4. Change ownership to root:root using the chown root:root /etc/shadow command.
+if [ `ls -lL /etc/shadow|sed -n -e '/^-\{10\}\.[\ \t].*.[\ \t]root[\ \t]\+root[\ \t]\+[0-9]\+.*$/p'|wc -l` -eq 1 ]; then
+	echo "Everything ok - Perms, owner and group are set correct for /etc/shadow"
+	exit 0
+else
+	echo "Failure - Perms, owner and group are incorrect for /etc/shadow please rectify"
+	echo "chmod 000 /etc/shadow "
+	echo "chown root:root /etc/shadow"
+	echo $?
+fi

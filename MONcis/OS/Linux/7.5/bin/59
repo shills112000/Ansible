@@ -1,0 +1,49 @@
+TestDesc="Status Severity Time Verify Home Directories Ownership No Results 0"
+# Description This test checks that all home directories are owned by the user associated with them.
+# In conjunction with proper permissions, correct ownership prevents unauthorized change.
+# Rules User Home Directories
+# Element Equals "User Home Directories"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^User
+# Name=(?!nfsnobody[\ \t])\S+[\ \t]+UserID=([1-9]\d{3}|0*\d{5,})[\ \t]+.*Owner=(?!\1[\ \t])\S+[\
+# \t]+HomeDirExisted=yes$/ (Flags:Multiline,Comments mode) Home Directories Ownership
+# Deviation Does not exist
+# Remediation To remediate failure of this policy test, set appropriate ownership on the home directory of
+# each account.
+# Setting appropriate ownership on the home directory of each account:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# Users=`/bin/cat /etc/passwd 2>/dev/null | /bin/egrep -v "^[[:space
+# :]]*(#.*|\+.*|nfsnobody):" | /bin/awk -F: '$3 >=1000 {print}'`; IFS=`
+# /bin/echo -en "\n\b"`; SavedIFS="$IFS"; IFS=`/bin/echo -en "\n
+# \b"`; for User in $Users; do UserAcct=`/bin/echo $User | /bin/cut
+# -d":" -f1`; UserHome=`/bin/echo $User | /bin/cut -d":" -f6`; if [ -
+# d "$UserHome" ] && [ "$UserHome" != "/" ]; then Owner=`/usr/
+# bin/stat -c %U $UserHome 2>/dev/null`;if [ "$Owner" != "$UserAc
+# ct" ]; then /bin/echo -e "The [ $UserAcct ] user has [ $UserHome ]
+# home directory with invalid ownership of [ $Owner ]";fi;fi;done
+# ;IFS="$SavedIFS"
+# to list users of which home directory is not owned by the assigned user except the "/"
+# directory.
+# 3. For each user found in step 2, run the chown <assigned_user> <home_dir_locat
+# ion> command to set owner of the home directory to the assigned user.
+# Note: If the script output returns a local account that duplicate name with others, recommend
+# that you should remove or comment it out.
+#ZERONUM=0
+#ZEROUSR=""
+#export ZERONUM  ZEROUSR
+#grep -v /sbin/nologin passwd| /bin/egrep -v "^[[:space:]]*(#.*|\+.*|root|halt|sync|shutdown):" | /bin/awk -F: '{print $1,$6}'|while read i j
+#do
+        #ZEROUSR=`/bin/ls -ld $j |awk '{print $3}'`
+        #if [ $ZEROUSR != $i ]; then
+                #echo "Failure on Directory $j ownership - should be owned by $i not $ZEROUSR"
+                #ZERONUM=`expr $ZERONUM + 1`
+        #else
+                #echo "Everything ok with ownership on Directory $i"
+        #fi
+#done
+#if [ $ZERONUM -lt 1 ]; then
+        #echo "Everything ok - all home dirs owned by user from passwd entry"
+#fi
+#exit $ZERONUM
+echo "everything ok - no need for this as Puppet ensures home dirs owned by passwd entry"
+exit 0

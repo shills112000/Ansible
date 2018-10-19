@@ -1,0 +1,22 @@
+TestDesc="Status Severity Time Verify That the mcstrans Package Is Removed No Results 0"
+# Description The mcstransd daemon provides category label information to client processes requesting in
+# formation. The label translations are defined in /etc/selinux/targeted/setrans.conf
+# Since this service is not used very often, disable it to reduce the amount of potentially vulnera
+# ble code running on the system.
+# Rules List of Installed Packages
+# Element Equals "installed packages"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*m
+# cstrans-\d.*$/ (Flags:Multiline,Comments mode) mcstrans Does not exist
+# Remediation To remediate failure of this policy test, erase the mcstrans package.
+# Erasing the mcstrans package:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the yum erase mcstrans command to remove the mcstrans package.
+# For further details, please run the command man yum to read man page.
+if [ `/usr/bin/rpm -qa| /usr/bin/sed -n -e '/^[\ \t]*mcstrans-[0-9].*$/p'|wc -l` -gt 0 ];  then
+        echo "mcstrans found removing package"
+        yum erase mcstrans
+        exit $?
+else
+        echo "everything is Ok - no mcstrans package found"
+        exit 0
+fi

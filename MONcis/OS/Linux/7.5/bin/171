@@ -1,0 +1,94 @@
+TestDesc=" Verify That sshd_config Disables PermitEmptyPasswords"
+# tyPasswords
+# No Results 0
+# Description This test verifies that the PermitEmptyPasswords option is disabled. Systems that allow users
+# to login without passwords are extremely vulnerable to attack.
+# Rules System Configuration Files
+# Element Equals "/etc/ssh/sshd_config"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*P
+# ermitEmptyPasswords[\ \t]+(\w+)[\ \t]*$/ (Flags:Multiline,Case insensitive,Comments mode)
+# SSH Server PermitEmptyPasswords Setting Not equal "yes"
+# Remediation To remediate failure of this policy test, configure the SSH daemon to use safe defaults for the
+# client and server by disabling PermitEmptyPasswords.
+# Configuring the SSH Server to disable the PermitEmptyPasswords:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/ssh/sshd_config file.
+# 3. Find the line PermitEmptyPasswords <value>.
+# 4. Set <value> to no and save the file.
+# 5. Run the pkill -HUP sshd or /sbin/service sshd restart commands to restart the
+# sshd service.
+# For further details, please run the command man sshd_config to read man page.
+# Command Line /bin/sh $(ScriptFile.sh)
+#/bin/sh
+ # Initialize Variables
+ FileName="/etc/ssh/sshd_config"
+ ParameterName="PermitEmptyPasswords"
+ SeparateSymbol=" "
+ Value="no"
+ # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="$TW_REMEDIATION_BACKUP_DIR$DirName"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+    fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ fi
+ # Issue the command to update the value of parameter
+ IsExisted=`/bin/awk -F"$SeparateSymbol" '{IGNORECASE=1;} $1 ~ \
+ /^[[:space:]]*'"$ParameterName"'[[:space:]]*$/ {print}' ${FileName} \
+ 2>/dev/null`
+ if [ -n "$IsExisted" ]; then
+    UpdateLog=`(/bin/awk -F"$SeparateSymbol" \
+ '{IGNORECASE=1;} ($1 ~ / ^[[:space:]]*'"$ParameterName"'[[:space:]]*$/) \
+ {$0 = Line;}{print}'
+ Line="${ParameterName}${SeparateSymbol}${Value}" \
+ ${BackupName} > ${FileName}) 2>&1`
+ # Rollback to the original file
+ if [ -n "$UpdateLog" ]; then
+    /bin/echo "FAILURE-4001: Could not change value of [$ParameterName]"\
+ "parameter to [$Value] in [$FileName] file"
+    /bin/cp -f ${BackupName} $FileName 2>/dev/null
+    exit 4001
+ fi
+ /bin/echo "SUCCESS-4001: Value of [$ParameterName]"\
+ "parameter changed to [$Value] in [$FileName] file"
+ else
+ AddLog=`(/bin/echo "${ParameterName}${SeparateSymbol}${Value}" \
+ >> $FileName) 2>&1`
+ if [ -n "$AddLog" ]; then
+ /bin/echo "FAILURE-6001: Could not add"\
+ "[${ParameterName}${SeparateSymbol}${Value}] line to"\
+ "[$FileName] file"
+ exit 6001
+ fi
+ /bin/echo "SUCCESS-6003: [${ParameterName}${SeparateSymbol}${Value}]"\
+ "line added to [$FileName] file"
+ fi
+ exit 0
+ # AR_ACTION = RHEL_PARAMETER_CASE_INSENSITIVE
+ # AR_COMPLETION = COMPLETION_OTHER
+ # AR_TEST_ID = T0003250
+ # AR_TEST_NAME = Verify That sshd_config Disables
+# PermitEmptyPasswords
+ # AR_FINAL_STEPS = To complete this remediation:
+ # AR_FINAL_STEPS = <ol><li>Become superuser or assume an equivalent
+# role.</li><li>Run the <b>pkill -HUP sshd</b> or <b>/sbin/service
+# sshd restart</b> commands to restart the <b>sshd </b>service.</li></
+# ol>
+# Post Remediation Category Other
+# Post Remediation Steps To complete this remediation:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the pkill -HUP sshd or /sbin/service sshd restart commands to restart the
+# sshd service.
+# Remediated Elements None

@@ -1,0 +1,68 @@
+TestDesc="Description This test verifies that passwords cannot be reused until at least 5 changes have been made."
+# Preventing users from reusing passwords makes it more difficult for attackers to gain access
+# to the system.
+# Rules Verify Password Reuse Setting in /etc/pam.d/system-auth File
+# Element Equals "Password_Reuse"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*p
+# assword[\ \t]+[^\#\n]*\bpam_unix\.so[\ \t]+[^\#\n]*\bremember=(?:[^0-4]|\d{2,})\b.*$|^[\ \t]*p
+# assword[\ \t]+[^\#\n]*\bpam_pwhistory\.so\b(?![^\#\n]*\bremember=[0-4]\b).*$/ (Flags:Multilin
+# e,Comments mode) Password Reuse Setting Exists
+# Remediation To remediate failure of this policy test, set the 'remember' option and create /etc/securi
+# ty/opasswd file in order to prevent users from reusing the last 5 old passwords.
+# Setting the 'remember' option and creating /etc/security/opasswd file in order to pre
+# vent users from reusing the last 5 old passwords:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the touch /etc/security/opasswd command to create the /etc/security/opass
+# wd file if it does not exist.
+# 3. Open the /etc/pam.d/system-auth file.
+# 4. Find the line that contains password <control_flag>[security_path/]pam_unix.so
+# [parameters] or password <control_flag>[security_path/]pam_pwhistory.so [pa
+# rameters] .
+# • If one of the lines is found, then find remember=<value> parameter.
+# o If the parameter is found, set the <value> to 5 or greater.
+# o If the parameter is not found, add the parameter remember=<value>
+# to the line where <value> is set to 5 or greater.
+# • If none of the lines is found, review the /etc/pam.d/system-auth file, then edit
+# or add some entries if needed to make sure that the file contains the following
+# ordered lines:
+# password sufficient [security_path/]pam_unix.so remem
+# ber=<value> [other parameters]
+# or
+# password required [security_path/]pam_pwhistory.so
+# remember=<value> [other parameters]
+# password sufficient [security_path/]pam_unix.so [param
+# eters]
+# where the <value> is set to 5 or greater.
+# 5. Save the file.
+# For further details, please refer to:
+# RHEL 5:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html/Deployment_Guide/s1-
+# pam-sample-simple.html
+# RHEL 6:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Managing_Smart_
+# Cards/PAM_Configuration_Files.html
+# RHEL 7:
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html-sin
+# gle/System-Level_Authentication_Guide/#PAM_Configuration_Files
+#!/bin/bash
+FileName="/etc/security/opasswd"
+CheckLine=`/bin/cat /etc/pam.d/system-auth | grep remember=`
+if [ -n "$Filename" ]; then
+  echo " creating opasswd file"
+  touch /etc/security/opasswd
+else
+  echo " [$FileName] file exists"
+fi
+
+if [ -e "$CheckLine" ]; then 
+   echo " please review r/etc/pam.d/system-auth and check remember= has a value of 5 or greater "
+else 
+   echo " please review  /etc/pam.d/system-auth and add the following to the file"
+echo " add some entries if needed to make sure that the file contains the following ordered lines:
+  password sufficient [security_path/]pam_unix.so remember=<value> [other parameters]
+ or
+ password required [security_path/]pam_pwhistory.so
+ remember=<value> [other parameters]
+ password sufficient [security_path/]pam_unix.so [parameters]
+ where the <value> is set to 5 or greater."
+fi

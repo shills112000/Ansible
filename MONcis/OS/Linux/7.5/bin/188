@@ -1,0 +1,30 @@
+TestDesc="Status Severity Time Verify That the chargen-stream Service Is Disabled No Results 0"
+# Description chargen-stream is a network service that responds with 0 to 512 ASCII characters for each
+# connection it receives. This service is intended for debugging and testing purposes. It is rec
+# ommended that this service be disabled.
+# Rules Service Status
+# Element Equals "service status"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ \t]*c
+# hargen-stream:[\ \t]+(.*)$/ (Flags:Multiline,Comments mode) chargen-stream Excludes "on"
+# Remediation To remediate failure of this policy test, disable the chargen-stream service.
+# Disabling the chargen-stream service:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the chkconfig --list chargen-stream command to check the status of the ser
+# vice.
+# 3. Disable the chargen-stream service using the chkconfig chargen-stream off com
+# mand.
+# 4. Run the /sbin/service xinetd restart command to restart xinetd service.
+# For further details, please run the command man chkconfig to read man page.
+if [ `chkconfig --list chargen-stream | sed -n -e '/^[\ \t]*chargen-stream.*[\ \t]\([0-6]:on\+\)/p' | wc -l` -eq 1 ]; then
+        echo "Failure - chargen-stream is configured to startup"
+        echo "/usr/sbin/chkconfig chargen-stream off"
+        err=$?
+        if [ $err -ne 0 ]; then
+                exit $err
+        fi
+        echo "/sbin/service xinetd restart"
+        exit $?
+else
+        echo "everything is ok - chargen-stream not configured to startup from chkconfig --list command"
+        exit 0
+fi

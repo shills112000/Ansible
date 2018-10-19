@@ -1,0 +1,27 @@
+TestDesc="Status Severity Time Verify Warning Banners in /etc/issue Do Not Contain OS Information No Results 0"
+# Description This test determines if the banner configured in /etc/issue contains information that would indi
+# cate the type of operating system.
+# Removal of operating system information from login banners helps to prevent attackers from
+# targeting OS vulnerabilities.
+# Rules System Configuration Files
+# Element Equals "/etc/issue"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /\\m|\\r|\
+# \s|\\v/ System Information Does not exist
+# Remediation To remediate failure of this policy test, configure the banners to create warnings for network
+# and physical access services in the /etc/issue file.
+# Configuring the banners for console access in the /etc/issue file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/issue file.
+# 3. Edit the file to include warning messages for network and physical access services.
+# 4. Remove system information such as: \m \r \s \v from the above file if they are present
+# and save the file.
+# For further details, please run the command man issue to read man page.
+if [ `sed -n -e '/\\m\|\\r\|\\s\|\\S\|\\v/p' /etc/issue|wc -l` -gt 0 ]; then
+        echo "Failure - /etc/issue contains \\m\\r\\s\\S\\v"
+        echo "edit the /etc/issue"
+        echo "Remove system information such as: \m \r \s \v from the above file if they are present"
+        echo $?
+else
+        echo "Everything ok - no system info found in /etc/issue"
+        exit 0
+fi

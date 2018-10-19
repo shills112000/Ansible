@@ -1,0 +1,35 @@
+TestDesc="Status Severity Time Verify That the AIDE Package Is Installed No Results 0"
+# Description Install AIDE to make use of the file integrity features to monitor critical files for changes that
+# could affect the security of the system.
+# Rules List of Installed Packages
+# Element Equals "installed packages"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*a
+# ide-\d.*$/ (Flags:Multiline,Case insensitive,Comments mode) aide Package Exists
+# Remediation To remediate failure of this policy test, install aide.
+# Installing aide:
+# 1. Become superuser or assume an equivalent role.
+# 2. Install aide using yum command:
+# yum install <aide_pakage>
+# Note: The prelinking feature can interfere with AIDE because it alters binaries to speed up
+# their start up times. Set PRELINKING=no in /etc/sysconfig/prelink and run /usr/sbin/pre
+# link -ua to restore the binaries to their prelinked state, thus avoiding false positives from
+# AIDE.
+# For further details, please run the command man yum to read man page.
+if [ `/usr/bin/rpm -qa| /usr/bin/sed -n -e '/^aide-[0-9].*/p'|wc -l` -gt 0 ];  then
+        echo "everything is Ok - aide package found"
+        exit 0
+else
+        echo "aide package not found"
+        for i in `yum list | /usr/bin/sed -n -e '/^\(aide\)\(.noarch.*\)/s//\1/p' -e '/^\(aide\)\(.[ix][368].*\)/s//\1/p' `; do
+                echo "installing $i package"
+		echo "please edit /etc/sysconfig/prelink setting  PRELINKING=no"
+		echo " then run /usr/sbin/prelink -ua"
+		echo "Be aware you may have to install some other packages based on dependencies"
+                /usr/bin/yum install $i
+		err=$?
+        	if [ $err -ne 0 ]; then
+                	exit $err
+        	fi
+        done
+        exit $?
+fi

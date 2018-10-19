@@ -1,0 +1,71 @@
+TestDesc="Status Severity Time # Limit Access to the Root Account from su"
+# Description This test checks /etc/pam.d/su to verify that only members of the wheel group have privileges
+# enabling them to become 'root' by using the 'su' command and entering the 'root' password.
+# It is security best practice to carefully restrict access to administrator accounts.
+# Rules System Configuration Files
+# Element Equals "/etc/pam.d/su"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*a
+# uth[\ \t]+required[\ \t]+[^\#]*pam_wheel\.so[\ \t]+use_uid[\ \t]*(?:$|\#)/ (Flags:Multiline,Com
+# ments mode) Access to su Limited to Wheel Members Exists
+# Remediation To remediate failure of this policy test, configure pam.d to limit access to the 'root' account
+# from super user to users within the wheel group.
+# Configuring pam.d to limit access to the 'root' account from super user:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/pam.d/su file.
+# 3. Add the line that contains auth required pam_wheel.so use_uid to the file and save
+# it.
+# Note: You must first have a user configured in the wheel group before making the change or
+# else it will not be possible to su to root.
+# For further details, please refer to:
+# RHEL 5:
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/5/html/Deplo
+# yment_Guide/ch-sec-network.html#s1-wstation-privileges
+# RHEL 6:
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-sin
+# gle/Deployment_Guide
+# RHEL 7:
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html-sin
+# gle/System_Administrators_Guide
+#!/bin/bash
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+# Initialize Variables
+ FileName="/etc/pam.d/su"
+ Line="auth required pam_wheel.so use_uid"
+ # Backup the file before updating
+ if [ -e "$FileName" ]; then
+     BaseName=`/bin/basename "$FileName" 2>/dev/null`
+     DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+     FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+     if [ ! -d "$FullPath" ]; then
+        CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+        if [ -n "$CreateLog" ]; then
+           /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+           exit 1003
+        fi
+     fi
+     BackupName="$FullPath/${BaseName}.tecopy"
+     CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+     if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+     fi
+ else
+     /bin/echo "FAILURE-1002: [$FileName] file/directory does not exist"
+     exit 1002
+ fi
+ # Issue the command to add line to the file
+ AddLog=`(/bin/echo "$Line" >> $FileName) 2>&1`
+ if [ -n "$AddLog" ]; then
+    /bin/echo "FAILURE-6001: Could not add [$Line] line to [$FileName] file"
+    exit 6001
+ fi
+ /bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+ exit 0
+# # AR_ACTION = RHEL_LINE_SETTING
+# # AR_COMPLETION = COMPLETION_NONE
+# # AR_TEST_ID = T0000926
+# # AR_TEST_NAME = Limit Access to the Root Account from su
+# Post Remediation Category None
+# Post Remediation Steps No additional Post Remediation steps
+# Remediated Elements None

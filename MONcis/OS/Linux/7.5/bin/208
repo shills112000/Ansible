@@ -1,0 +1,20 @@
+TestDesc="Status Severity Time Verify That the ypserv Package Is Removed No Results 0"
+# Description This test verifies that the ypserv package is installed. Removing the ypserv package decreas
+# es the risk of the accidental (or intentional) activation of NIS or NIS+ services.
+# Rules List of Installed Packages
+# Element Equals "installed packages"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*y
+# pserv-\d.*$/ (Flags:Multiline,Comments mode) NIS Server Does not exist
+# Remediation To remediate failure of this policy test, erase ypserv package.
+# Erasing ypserv package:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the yum erase ypserv command to remove ypserv package.
+# For further details, please run the command man yum to read man page.
+if [ `/usr/bin/rpm -qa| /usr/bin/sed -n -e '/^[\ \t]*ypserv-[0-9].*$/p'|wc -l` -gt 0 ];  then
+        echo "ypserv found removing package"
+        /usr/bin/yum erase ypserv
+        exit $?
+else
+        echo "everything is Ok - no ypserv package found"
+        exit 0
+fi

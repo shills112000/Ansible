@@ -1,0 +1,29 @@
+TestDesc="Status Severity Time Verify /etc/cron.allow Permissions No Results 0"
+# Description This test verifies that the /etc/cron.allow file has owned and group owned by root, and per
+# missions of 600 or more restrictive. This gives root read and write permissions while all other
+# users have no access.
+# Rules System Configuration Files
+# Element Equals "/etc/cron.allow"
+# Version conditions Action if missing:Fail User Matches "^root[\ \t]+\(\d+\)[\ \t]*$" AND Group Matches "^root[\ \t]+
+# \(\d+\)[\ \t]*$" AND Permissions Matches "^-.{2}-{7}.*$"
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the /etc/
+# cron.allow file.
+# Setting appropriate permissions and ownership on the /etc/cron.allow file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the touch /etc/cron.allow command to create the /etc/cron.allow file if it does
+# not exist.
+# 3. Check the permissions and ownership of the file using the ls -lL /etc/cron.allow com
+# mand.
+# 4. Change permissions to 600 or more restrictive using the chmod u-x,go-rwx /etc/
+# cron.allow command.
+# 5. Change ownership to root:root using the chown root:root /etc/cron.allow com
+# mand.
+if [ `ls -lL /etc/cron.allow|sed -n -e '/^-.\{2\}-\{7\}\.[\ \t].*.[\ \t]root[\ \t]\+root[\ \t]\+[0-9]\+.*$/p'|wc -l` -eq 1 ]; then
+        echo "Everything ok - Perms, owner and group are set correct for /etc/cron.allow"
+        exit 0
+else
+        echo "Failure - Perms, owner and group are incorrect for /etc/cron.allow please rectify"
+        echo "chmod u-x,go-rwx /etc/cron.allow "
+        echo "chown root:root /etc/cron.allow"
+        echo $?
+fi

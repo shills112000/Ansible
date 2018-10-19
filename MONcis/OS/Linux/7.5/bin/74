@@ -1,0 +1,44 @@
+TestDesc="Status Severity Time Verify That .rhosts Files Do Not Exist No Results 0"
+# Description This test determines if any .rhosts files are present on the system. These files may contain un
+# encrypted passwords which could be used to attack other systems. Examine the list of files
+# found by this policy test very carefully and identify application dependencies and user impact
+# before removing anything.
+# Rules User Dot Files
+# Element Equals "User Dot Files"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^.*/\.rho
+# sts$/ (Flags:Multiline,Comments mode) .rhosts File Does not exist
+# Remediation To remediate failure of this policy test, remove the .rhosts files in the user home directories.
+# Removing the .rhosts files in the user home directories:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# Users=`/bin/egrep -v "^[[:space:]]*#|^[[:space:]]*$" /etc/passwd
+# 2>/dev/null | /bin/awk -F: '{ cmd = "/usr/bin/passwd -S " $1 " 2>/
+# dev/null"; cmd | getline UserInfo; if ($0 !~ /^[[:space:]]*(#.*|\+.*|
+# root|halt|sync|shutdown):/ && (UserInfo ~ /^[[:graph:]]+[[:spac
+# e:]]+PS[[:space:]]+/ || (UserInfo ~ /^[[:space:]]*Unknown[[:sp
+# ace:]]+user\./ && $2 != "!!")) && $7 !~ /^\/sbin\/nologin$/){ print
+# $1 ":" $6}}'`; SavedIFS="$IFS"; IFS=`/bin/echo -e "\n\b"`; for User
+# in $Users; do UserName=`/bin/echo "$User" | /bin/awk -F: '{print
+# $1}'`; HomeDirectory=`/bin/echo "$User" | /bin/awk -F: '{print $2}'`
+# ; /bin/ls -alL $HomeDirectory/.rhosts 2>/dev/null | awk '$1 !~ /^d/
+# { FileName=substr($0,index($0,"/")); print UserName, $1, $3, $4,
+# FileName}' UserName="$UserName"; done; IFS="$SavedIFS";
+# to list all .rhosts files.
+# 3. Remove .rhosts files found in step 2 using the rm -f <.rhosts_file_name> command.
+# For further details, please run the command man rm to read man page.
+ZERONUM=0
+ZEROUSR=""
+export ZERONUM  ZEROUSR
+for i in `grep -v /sbin/nologin /etc/passwd| /bin/egrep -v "^[ ]*(#.*|\+.*|root|halt|sync|shutdown):" | /bin/awk -F: '{print $6}'`
+do
+        if [ `/bin/ls -alL ${i}/.rhosts | wc -l ` -ne 0 ]; then
+                echo "Failure on  $i .rhosts exists in Directory"
+                ZERONUM=`expr $ZERONUM + 1`
+        else
+                echo "Everything ok with Directory $i"
+        fi
+done
+if [ $ZERONUM -lt 1 ]; then
+        echo "Everything ok - no home dirs found with .rhosts file"
+fi
+exit $ZERONUM

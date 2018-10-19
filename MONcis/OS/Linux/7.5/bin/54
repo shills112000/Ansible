@@ -1,0 +1,27 @@
+TestDesc="Status Severity Time Verify /etc/passwd File Permissions No Results 0"
+# Description This test verifies that the 'root' user and 'root' group owns the /etc/passwd file and permissions
+# are equal to 644 or more restrictive.
+# Setting the recommended permissions allows users to view the file, but only 'root' has write
+# access.
+# Rules System Configuration Files
+# Element Equals "/etc/passwd"
+# Version conditions Action if missing:Pass User Matches "^root[\ \t]+\(\d+\)[\ \t]*$" AND Permissions Matches "^-.
+# {2}-.-{2}.-{2}.*$" AND Group Matches "^root[\ \t]+\(\d+\)[\ \t]*$"
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the /etc/
+# passwd file.
+# Setting appropriate permissions and ownership on the /etc/passwd file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Check the permissions and ownership of the file using the ls -lL /etc/passwd com
+# mand.
+# 3. Change permissions to 644 or more restrictive using the chmod u-x,go-wx /etc/pass
+# wd command.
+# 4. Change ownership to root:root using the chown root:root /etc/passwd command.
+if [ `ls -lL /etc/passwd|sed -n -e '/^-.\{2\}-.-\{2\}.-\{2\}\.[\ \t].*.[\ \t]root[\ \t]\+root[\ \t]\+[0-9]\+.*$/p'|wc -l` -eq 1 ] ; then
+        echo "Everything ok - Perms, owner and group are set correct for /etc/passwd"
+        exit 0
+else
+        echo "Failure - Perms, owner and group are incorrect for /etc/passwd please rectify"
+        echo "chmod u-x,go-wx /etc/passwd "
+        echo "chown root:root /etc/passwd"
+        echo $?
+fi

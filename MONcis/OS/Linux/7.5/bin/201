@@ -1,0 +1,52 @@
+TestDesc="Status Severity Time Verify That the tcpmux-server Service Is Disabled No Results 0"
+# Description This test determines whether the tcpmux-server has been disabled. This setting supports sys
+# tem integrity and information confidentiality by preventing TCP port multiplexing (i.e. a rouge
+# process using a well-known port to stay "under the radar").
+# Rules Service Status
+# Element Equals "service status"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ \t]*t
+# cpmux-server:[\ \t]+(.*)$/ (Flags:Multiline,Comments mode) tcpmux-server Service Status Ex
+# cludes "on"
+# Remediation To remediate failure of this policy test, disable the tcpmux-server service.
+# Disabling the tcpmux-server service:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the chkconfig --list tcpmux-server command to check the status of the service.
+# 3. Disable the tcpmux-server service using the chkconfig tcpmux-server off com
+# mand.
+# 4. Run the /sbin/service xinetd restart command to restart xinetd service.
+# For further details, please run the command man chkconfig to read man page.
+#!/bin/bash
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+# Initialize Variables
+ ServiceName="tcpmux-server"
+# Issue the command to disable the service
+ IsExisted=`/sbin/chkconfig --list ${ServiceName} 2>/dev/null`
+ if [ -n "$IsExisted" ]; then
+    /sbin/chkconfig ${ServiceName} off 2>/dev/null
+    IsChanged=`/sbin/chkconfig --list ${ServiceName} 2>/dev/null | /bin/egrep -w "off"`
+    if [ -z "$IsChanged" ]; then
+       echo "FAILURE-3001: Could not change startup mode of [$ServiceName] service to disabled"
+       exit 3001
+    else
+       echo "SUCCESS-3001: Startup mode of [$ServiceName] service changed to disabled"
+       /sbin/service xinetd restart
+       exit 0
+    fi
+ else
+    echo "SUCCESS-3002: [$ServiceName] service does not exist"
+    exit 0
+ fi
+# # AR_ACTION = RHEL_SERVICE_DISABLE
+# # AR_COMPLETION = COMPLETION_RESTART_SERVICE xinetd
+# # AR_TEST_ID = T0013662
+# # AR_TEST_NAME = Verify That the tcpmux-server Service Is Disabled
+# # AR_FINAL_STEPS = To complete this remediation:
+# # AR_FINAL_STEPS = <ol><li>Become superuser or assume an equivalent
+# role.</li><li>Run the <b>/sbin/service xinetd restart</b> command to
+# restart the <b>xinetd </b>service.</li></ol>
+# Post Remediation Category Restart Service "xinetd"
+# Post Remediation Steps To complete this remediation:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the /sbin/service xinetd restart command to restart the xinetd service.
+# Remediated Elements /etc/xinetd.d/time

@@ -1,0 +1,32 @@
+TestDesc="Status Severity Time World-writable Directories Should Have Their Sticky Bit Set "
+# No Results 0
+# Description This test verifies that the 'sticky bit' is set on all world-writable directories.
+# When the 'sticky bit' is set on a directory, only the owner of a file may remove that file from the
+# directory.
+# Rules Check Sticky Bit Setting on World Writable Files
+# Element Equals "File Permissions"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /.+/
+# (Flags:Case insensitive) Sticky Bit Deviation Does not exist
+# Remediation To remediate failure of this policy test, set sticky bit to world-writable directories.
+# Setting sticky bit to world-writable directories:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the following script:
+# PARTs=`/bin/df --local -P 2>/dev/null | /bin/awk 'NR != 1 {$1="
+# ";$2="";$3="";$4="";$5="";gsub("^[[:space:]]+/","/",$0);print $0}'
+# 2>/dev/null`; SaveIFS=$IFS;IFS=`/bin/echo -e "\n\b"`; for PART in
+# $PARTs; do /usr/bin/find "$PART" -xdev -type d \( -perm -0002 -
+# a ! -perm -1000 \) -ls 2>/dev/null | /bin/awk '{a=$3; gsub("^[^/]*/",
+# "/",$0); print a, $0}'; done;
+# to list world-writable directories which are not set the sticky bit.
+# 3. Set the sticky bit or remove write permission for other group on directories found in
+# step 2 using the chmod +t <file_location> or chmod o-w <file_location> command
+# respectively.
+# For further details, please refer to:
+# http://www.redhat.com/mirrors/LDP/LDP/GNU-Linux-Tools-Summary/html/file-permission
+# s.html
+#!/bin/bash
+echo " Set the sticky bit or remove write permission for other group on directories listed Below"
+
+PARTs=`/bin/df --local -P 2>/dev/null | /bin/awk 'NR != 1 {$1="";$2="";$3="";$4="";$5="";gsub("^[[:space:]]+/","/",$0);print $0}' 2>/dev/null`; SaveIFS=$IFS;IFS=`/bin/echo -e "\n\b"`; 
+for PART in $PARTs; do /usr/bin/find "$PART" -xdev -type d \( -perm -0002 -a ! -perm -1000 \) -ls 2>/dev/null | /bin/awk '{a=$3; gsub("^[^/]*/","/",$0); print a, $0}'; 
+done;

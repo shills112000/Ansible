@@ -1,0 +1,26 @@
+TestDesc=" Status Severity Time Verify That SELinux Is Not Disabled Using Grub Boot Loader"
+# No Results 0
+# Description SELinux must be enabled at boot time in /boot/grub2/grub.conf to ensure that the controls it
+# provides are not overwritten.
+# Rules System Configuration Files
+# Element Equals "/boot/grub2/grub.cfg"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*l
+# inux(?:\d+)?[\ \t]+.*\bselinux=0\b.*$/ (Flags:Multiline,Case insensitive,Comments mode) selin
+# ux Boot Time Enabled Setting Does not exist
+# Remediation To remediate failure of this policy test, enable SELinux in /etc/default/grub file.
+# Enabling SELinux in /etc/default/grub file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/default/grub file.
+# 3. Remove selinux=0 parameter in the GRUB_CMDLINE_LINUX="parameter1 param
+# eter2 ..." line.
+# 4. Run grub2-mkconfig -o /boot/grub2/grub.cfg command to apply the change.
+if [ `/usr/bin/sed -n -e '/^[\ \t]linux.*.[\ \t]selinux=0[\ \t].*$/p' /boot/grub2/grub.cfg |wc -l` -eq 0 ]; then
+        echo "everything is ok - selinux is not enabled"
+else
+        echo "Failure - selinux is enabled"
+        echo "Open the /etc/default/grub"
+	echo "Remove selinux=0 parameter in the GRUB_CMDLINE_LINUX=parameter1 parameter2 ... line."
+	echo "Run grub2-mkconfig -o /boot/grub2/grub.cfg "
+        exit $?
+fi
+	exit 0

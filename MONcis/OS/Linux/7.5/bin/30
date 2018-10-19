@@ -1,0 +1,57 @@
+TestDesc="Description This test verifies that the system is configured to use a minimum password length of 14 characters."
+# Using longer passwords hinders the ability of an attacker to use brute-force methods to try to
+# gain access to the system.
+# Rules Get /etc/pam.d/system-auth Content
+# Element Equals "/etc/pam.d/system-auth_content"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*p
+# assword[\ \t]+(?:requisite|required)[\ \t]+[^\#&&\S]*\bpam_cracklib\.so[\ \t]+[^\#\n]*\bminlen=(
+# \d+)\b.*/ (Flags:Multiline,Comments mode) Minimum of Password Length Setting Greater than
+# or equal 14
+# Remediation To remediate failure of this policy test, set the required minimum acceptable size for the new
+# password to at least 14 characters.
+# Setting the minimum acceptable size for the new password to at least 14 characters:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/pam.d/system-auth file.
+# 3. Find the line that contains:
+# password <control_flag> [security_path/]pam_cracklib.so [param
+# eters]
+# where the <control flag> is requisite or required.
+# 4. If the line is found, find the parameter minlen=<value>:
+# • If the parameter is found, set the <value> to 14 or greater.
+# • If the parameter is not found, add the parameter minlen=<value> to the line
+# where the <value> is set to 14 or greater.
+# 5. If the line is not found, then review the file, then edit or add some entries if needed to
+# make sure that the file contains the following ordered lines:
+# password requisite [security_path/]pam_cracklib.so minlen=<va
+# lue> [other parameters]
+# password sufficient [security_path/]pam_unix.so use_authtok
+# [other parameters]
+# password required [security_path/]pam_deny.so
+# where the <value> is set to 14 or greater.
+# 6. Save the file.
+# For further details, please refer to:
+# RHEL 5:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html/Deployment_Guide/s1-
+# pam-sample-simple.html
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Deployment
+# _Guide/index.html#s1-pam-config-files
+# RHEL 6:
+# http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/6/html/Managing_Smart_
+# Cards/PAM_Configuration_Files.html
+# RHEL 7:
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html-sin
+# gle/System-Level_Authentication_Guide/#PAM_Configuration_Files
+#!/bin/bash
+FileName="/etc/pam.d/system-auth"
+CheckLine=`/bin/cat /etc/pam.d/system-auth | grep minlen=`
+
+if [ -e "$CheckLine" ]; then
+   echo " please review r/etc/pam.d/system-auth and check pam_cracklib.so minlen=  has a value of 14 or greater "
+else
+   echo " please review  /etc/pam.d/system-auth and add some entries if needed to make sure that the file contains the following ordered lines:
+ password requisite [security_path/]pam_cracklib.so minlen=<value> [other parameters]
+ password sufficient [security_path/]pam_unix.so use_authtok [other parameters]
+ password required [security_path/]pam_deny.so
+ where the <value> is set to 14 or greater."
+fi
+

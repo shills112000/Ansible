@@ -1,0 +1,34 @@
+TestDesc="Status Severity Time Verify That /dev/shm Partition Is Set nosuid Option in /etc/fstab No Results 0"
+# Description The nosuid mount option specifies that the /dev/shm (temporary filesystem stored in memory)
+# will not execute setuid and setgid on executable programs as such, but rather execute them
+# with the uid and gid of the user executing the program. Setting this option on a file system pre
+# vents users from introducing privileged programs onto the system and allowing non-root users
+# to execute them.
+# Rules System Configuration Files
+# Element Equals "/etc/fstab"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*[
+# ^\#&&\S]+[\ \t]+/dev/shm[\ \t]+[^\#&&\S]+[\ \t]+[^\#&&\S]*\bnosuid\b.*$/ (Flags:Multiline,Com
+# ments mode) /dev/shm with nosuid Option Exists
+# Remediation To remediate failure of this policy test, set nosuid option for /dev/shm partition.
+# Setting nosuid option for /dev/shm partition:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/fstab file.
+# 3. Find the line with options for /dev/shm.
+# 4. If not found, use the Logical Volume Manager (LVM) to create a separate partition for
+# /dev/shm, then go to step 5.
+# 5. If found, add the nosuid option to the fourth field, using a comma to separate from
+# other options.
+# 6. Remount partition by using the mount -o remount, nosuid /dev/shm command.
+# For further details, see the guidance on the Logical Volume Manager (LVM) for more informa
+# tion on repartitioning filesystems:
+# http://tldp.org/HOWTO/LVM-HOWTO/
+if [ `sed -n -e '/^.*.[\ \t]\/dev\/shm[\ \t]\+.*nosuid.*$/p' /etc/fstab| wc -l` -gt 0 ]; then
+        echo "everything ok - /dev/shm has nosuid mount option enabled"
+        exit 0
+else
+        echo "Failure - /dev/shm does not have nosuid in its mount point options"
+        echo " For further details, see the guidance on the Logical Volume Manager (LVM) for more information on repartitioning filesystems:"
+        echo " http://tldp.org/HOWTO/LVM-HOWTO/"
+        echo $?
+fi
+

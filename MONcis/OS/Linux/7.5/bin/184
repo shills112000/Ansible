@@ -1,0 +1,27 @@
+TestDesc=" Status Severity Time Verify That the System Is Configured to Use an NTP Server No Results 0"
+# Description This test verifies that the system clock is synchronized to a trusted time source. Synchronizing
+# with an NTP server makes it possible to collate system logs from multiple sources or correlate
+# computer events with real time events. Using a trusted NTP server provided by your organiza
+# tion is recommended.
+# Rules System Configuration Files
+# Element Equals "/etc/ntp.conf"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*s
+# erver[\ \t]+\S+$/ (Flags:Multiline,Comments mode) server Exists
+# Remediation To remediate failure of this policy test, config the server for the NTP to synchronize system
+# clock:
+# Config the server for the NTP to synchronize system clock:
+# 1. Become super user or equivalent roles
+# 2. Open /etc/ntp.conf file
+# 3. Add the following line:
+# server <ntp-server>
+# <ntp-server>
+# 4. Save and close the file
+if [ `sed -n -e '/^[\ \t]*server[\ \t].*[0-9].*$/p' /etc/ntp.conf |wc -l` -gt 0 ];  then
+        echo "Everything ok server settings found in /etc/ntp.conf"
+        exit 0
+else
+        echo "Failure - no server settings found in /etc/ntp.conf"
+	echo "edit /etc/ntp.conf and Add the following line:"
+	echo "server ntp-server-ip-address..."
+        exit $?
+fi

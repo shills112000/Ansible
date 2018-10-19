@@ -1,0 +1,79 @@
+TestDesc="Verify That SSH Uses Approved Ciphers during Communication"
+# Node: mon06-uk-gs2-fim-01 (Linux Server)
+# Test Status Severity Time
+# Verify That SSH Uses Approved Ciphers dur
+# ing Communication
+# No Results 0
+# Description This variable limits the types of ciphers that SSH can use during communication.
+# Based on research conducted at various institutions, it was determined that the symmetric
+# portion of the SSH Transport Protocol (as described in RFC 4253) has security weaknesses
+# that allowed recovery of up to 32 bits of plaintext from a block of ciphertext that was encrypted
+# with the Cipher Block Chaining (CBC) method. From that research, new Counter mode algo
+# rithms (as described in RFC4344) were designed that are not vulnerable to these types of at
+# tacks and these algorithms are now recommended for standard use.
+# Rules System Configuration Files
+# Element Equals "/etc/ssh/sshd_config"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*(
+# ?i)Ciphers(?-i)[\ \t]*((?:aes128-ctr|aes192-ctr|aes256-ctr)\b,?)+[\ \t]*(?:$|\#.*)$/ (Flags:Multilin
+# e,Comments mode) Approved Ciphers Configuration Exists
+# Remediation To remediate failure of this policy test, configure the SSH server to specify the ciphers al
+# lowed for protocol version 2.
+# Configuring the SSH server to specify the ciphers allowed for protocol version 2:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/ssh/sshd_config file.
+# 3. Find the line Ciphers <value>.
+# 4. Set <value> where <value> does not contain ciphers which are different from aes12
+# 8-ctr, aes192-ctr, aes256-ctr and save the file.
+# 5. Run the pkill -HUP sshd or /sbin/service sshd restart commands to restart the
+# sshd service.
+# For further details, please run the command man sshd_config to read man page.
+#!/bin/bash
+# initialize Variables
+FileName="/etc/ssh/sshd_config"
+TempFile="sshd_conf_tmp"
+Line="Ciphers aes128-ctr,aes192-ctr,aes256-ctr"
+sline="Ciphers"
+#Linec=`cat -n $FileName | grep "$sline" | awk '{print $1}'`
+#Linec=$(( $Linec +0 ))
+CheckLine=`cat $FileName | grep "Ciphers aes128-ctr,aes192-ctr,aes256-ctr"`
+CheckLine2=`cat $FileName | grep "#Ciphers aes128-ctr,aes192-ctr,aes256-ctr"`
+Line2=`cat -n $FileName | grep "$Line"`
+
+ if [ -n "$CheckLine" ]; then
+      echo " Ciphers already set in [$FileName]"
+      exit
+   fi
+# # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+if [ -n "$Line2" ]; then
+   awk '{if ($1 ~ /^Ciphers/) print$0, ",aes128-ctr,aes192-ctr,aes256-ctr"; else print $0}' "$FileName" > "$TempFile"   
+# sed -e ''$Linec's/$/\n Ciphers aes128-ctr,aes192-ctr,aes256-ctr/g' "$FileName" > "$TempFile"
+#   sed -i 's/ Ciphers aes128-ctr,aes192-ctr,aes256-ctr/Ciphers aes128-ctr,aes192-ctr,aes256-ctr/g' "$TempFile"
+   /bin/cp -f "$TempFile" "$FileName" 2>&1
+ else
+   echo "$Line" >> "$FileName"
+fi
+   /bin/echo "SUCCESS-6003: [$Line] line updated in [$FileName] file"
+   /bin/echo "restarting service to apply changes"
+#/sbin/service sshd restart
+exit 6003

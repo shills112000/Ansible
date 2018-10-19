@@ -1,0 +1,22 @@
+TestDesc="Verify That the firewalld Is Enabled"
+# Description This test verifies that the firewalld is enabled. The firewalld service provides a dynamic fire
+# wall allowing changes to be made at anytime without disruptions cause by reloading. A fire
+# wall provides extra protection for the Linux system by limiting communications in and out of
+# the box to specific addresses and ports.
+# Rules Service Status for RHEL 7
+# Element Equals "Service Status for RHEL 7"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*f
+# irewalld\.service[\ \t]+(\S+)[\ \t]*$/ (Flags:Multiline,Comments mode) firewalld Service Status
+# Equals "enabled"
+# Remediation To remediate failure of this policy test, turn on the firewalld service.
+# Turning on the firewalld service:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the /usr/bin/systemctl enable firewalld command to keep the firewalld service
+# turned on in the next reboot.
+# Note:When you enable firewall, some applications may be blocked. If you want to allow them
+# to execute, please add to exception list in firewall.
+# For further details, please run the command man systemctl to read man page.
+#!/bin/bash
+ echo "enabling firewalld" 
+ /usr/bin/systemctl enable firewalld
+exit

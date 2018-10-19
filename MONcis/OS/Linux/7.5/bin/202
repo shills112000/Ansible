@@ -1,0 +1,22 @@
+TestDesc=" Status Severity Time Verify That the telnet Package Is Removed"
+# Description The telnet package contains the telnet client, which allows users to start connections to oth
+# er systems via the telnet protocol. The telnet protocol is insecure and unencrypted. The use
+# of an unencrypted transmission medium could allow a user with access to sniff network traffic
+# the ability to steal credentials. It is recommended that The telnet package is removed.
+# Rules List of Installed Packages
+# Element Equals "installed packages"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*t
+# elnet-\d.*$/ (Flags:Multiline,Comments mode) telnet Does not exist
+# Remediation To remediate failure of this policy test, erase the telnet package.
+# Erasing the telnet package:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the yum erase telnet command to remove telnet package.
+# For further details, please run the command man yum to read man page.
+if [ `/usr/bin/rpm -qa| /usr/bin/sed -n -e '/^[\ \t]*telnet-[0-9].*$/p'|wc -l` -gt 0 ];  then
+        echo "telnet found removing package"
+        /usr/bin/yum erase telnet
+        exit $?
+else
+        echo "everything is Ok - no telnet package found"
+        exit 0
+fi

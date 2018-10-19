@@ -1,0 +1,35 @@
+TestDesc="Verify That System Accounts Are Locked"
+# No Results 0
+# Description This test verifies that system accounts are locked. It is important to make sure that accounts
+# that are not being used by regular users are locked to prevent them from being used to pro
+# vide an interactive shell and it is also recommended that the shell field in the password file
+# be set to /sbin/nologin. This prevents the account from potentially being used to run any com
+# mands.
+# Rules Block System Accounts
+# Element Equals "System Accounts"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^User
+# name=\S+[\ \t]+Id=(?:\d{0,2}|[1-4]\d{2})[\ \t]+Shell=\S+[\ \t]+Account_locked=(?!LK\b).*/ (Flag
+# s:Multiline,Comments mode) System Account Setting Deviation Does not exist
+# Remediation To remediate failure of this policy test, lock the system accounts.
+# Locking the system accounts:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# SystemAccounts=`/bin/awk -F: '0+$3 < 500 && $1 !~ /^[[:space:
+# ]]*(#.*|root|\+.*)$/ {print $1}' /etc/passwd 2>/dev/null`; for Sys
+# temAccount in $SystemAccounts; do Account_locked=`/usr/bin/
+# passwd -S $SystemAccount 2>/dev/null | /bin/awk '$2 !~ /^LK
+# $/{print $2}'`; if [ -n "$Account_locked" ]; then /bin/echo "$Sys
+# temAccount"; fi; done
+# to list all the system accounts that are not locked.
+# 3. For each account listed in step 2, run command the usermod -L <account_name>
+# command to lock the account.
+# For further details, please run the command man usermod to read man page.
+#!/bin/bash
+
+SystemAccounts=`/bin/awk -F: '0+$3 < 500 && $1 !~ /^[[:space:]]*(#.*|root|\+.*)$/ {print $1}' /etc/passwd 2>/dev/null`; 
+for SystemAccount in $SystemAccounts; do 
+  Account_locked=`/usr/bin/passwd -S $SystemAccount 2>/dev/null | /bin/awk '$2 !~ /^LK$/{print $2}'`; 
+  if [ -n "$Account_locked" ]; then 
+     /bin/echo "$SystemAccount"; 
+  fi; 
+done

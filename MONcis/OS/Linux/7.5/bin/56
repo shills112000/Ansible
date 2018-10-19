@@ -1,0 +1,52 @@
+TestDesc="Verify Boot Loader Password Settings"
+# No Results 0
+# Description This test verifies that a password is required when a user attempts to modify the boot process
+# by passing commands to GRUB.
+# If a password is not required an attacker might be able to subvert the normal boot process on
+# the server.
+# Rules Get Super Users Setting in /boot/grub2/grub.cfg File
+# Element Equals "Get Super Users Setting in /boot/grub2/grub.cfg File"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /.+/ (Flag
+# s:Multiline,Case insensitive,Comments mode) Super User with Assigned Password Exists
+# Remediation To remediate failure of this policy test, add and setup encrypted password for at least one su
+# peruser in /etc/grub.d/00_header file.
+# Adding and setting up encrypted password for superuser in /etc/grub.d/00_header file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the /bin/grub2-mkpasswd-pbkdf2 command to generate the encryption pass
+# word of super users.
+# 3. Open the /etc/grub.d/00_header file.
+# 4. Find the line set superusers="user1 user2 ...".
+# 5. If not found add the following section to the file to add super users:
+# cat << EOF
+# set superusers="user1 user2 ..."
+# EOF
+# 6. Setting encryption password for superuser:
+# • Copy the encryption password of super user from step 2.
+# • Add the password_pbkdf2 <username> <encryption password> line right
+# after the line set superusers="user1 user2 ...".
+# 7. Run the grub2-mkconfig -o /boot/grub2/grub.cfg command to apply the change.
+# For further details, please refer to :
+# https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/7/html/Syste
+# m_Administrators_Guide/sec-GRUB_2_Password_Protection.html
+#!/bin/bash
+
+CheckLine=`/bin/cat /etc/grub.d/00_header | grep "set superusers=" `
+if [ -n "$CheckLine" ]; then
+    echo " Policy Exists"
+else
+    echo " Please  add and setup encrypted password for at least one superuser in /etc/grub.d/00_header file"
+echo "use the following steps"
+echo ". Run the /bin/grub2-mkpasswd-pbkdf2 command to generate the encryption password of super users.
+Open the /etc/grub.d/00_header file.
+Find the line set superusers=\"user1 user2 ...\".
+If not found add the following section to the file to add super users:
+cat << EOF
+set superusers=\"user1 user2 ...\"
+EOF
+Setting encryption password for superuser:
+Copy the encryption password of super user from above.
+Add the password_pbkdf2 <username> <encryption password> line right after the line set superusers=\"user1 user2 ...\"
+Run the grub2-mkconfig -o /boot/grub2/grub.cfg command to apply the change."
+fi
+
+

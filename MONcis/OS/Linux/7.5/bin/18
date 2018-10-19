@@ -1,0 +1,95 @@
+TestDesc=" Status Severity Time For 64 Bit Architecture: Verify That audit Logging Is Enabled on the Access Deny Failures to Create, Open or Truncate Files by Users No Results 0"
+# For 64 Bit Architecture: Verify That audit Log
+# ging Is Enabled on the Access Deny Failures
+# to Create, Open or Truncate Files by Users
+# No Results 0
+# Description This test verifies that /etc/audit/audit.rules contains the '-a always,exit -F arch=b64 -S creat -S
+# open -S openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295
+# -k access' option.
+# It is important to maintain an audit trail in order to thoroughly track and analyze system activity
+# when something goes wrong.
+# This configuration only applies to 64 bits architecture.
+# Rules Audit Rules for 64 bits Architecture
+# Element Equals "/etc/audit/audit.rules"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ ]*
+# -a[\ ]+(?=\S*\bexit\b)(?=\S*\balways\b)(?!\S*\bentry\b)(?!\S*\bnever\b)\S*[\ ]+(?=.*-F[\ ]+arch=
+# b64\b)(?=.*-S[\ ]+creat\b)(?=.*-S[\ ]+open\b)(?=.*-S[\ ]+openat\b)(?=.*-S[\ ]+truncate\b)(?
+# =.*-S[\ ]+ftruncate\b)(?=.*-F[\ ]+exit[\ ]*=[\ ]*-EACCES\b)(?=.*-F[\ ]+auid>=500\b)(?=.*-F[\ ]+
+# auid!=4294967295\b)(?=.*-k[\ ]+access\b).*/ (Flags:Multiline,Comments mode) The Audit Sys
+# tem Logs Failed Access Attempts of Normal Users Using Create, Open or Truncate Com
+# mand to Files and Programs Exists
+# Remediation To remediate failure of this policy test, configure the system to audit unsuccessful unautho
+# rized access attempts to files.
+# Configuring the system to audit unsuccessful unauthorized access attempts to files on
+# RHEL 5, 6:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b64 -S creat -S open -S ope
+# nat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295
+# -k access entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Configuring the system to audit unsuccessful unauthorized access attempts to files on
+# RHEL 7:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/rules.d/audit.rules file.
+# 3. Find the line that contains the -a always,exit -F arch=b64 -S creat -S open -S ope
+# nat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295
+# -k access entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Note: This configuration only applies to 64 bits architecture.
+# For further details, please run the command man auditctl to read man page.
+# Command Line /bin/sh $(ScriptFile.sh)
+#/bin/sh 
+ # Initialize Variables
+ FileName="/etc/audit/audit.rules"
+ Line="-a always,exit -F arch=b64 -S creat -S open -S openat -S truncate "
+ Line=$Line"-S ftruncate -F exit=-EACCES -F auid>=500 -F auid!=4294967295 -k a"
+ Line=$Line"ccess"
+ # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+    fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+       /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+       exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+ # Issue the command to add line to the file
+ AddLog=`(/bin/echo "$Line" >> $FileName) 2>&1`
+ if [ -n "$AddLog" ]; then
+    /bin/echo "FAILURE-6001: Could not add [$Line] line to [$FileName] file"
+    exit 6001
+ fi
+ /bin/echo "SUCCESS-6003: [$Line] line added to [$FileName] file"
+ exit 0
+ # AR_ACTION = RHEL_LINE_SETTING
+ # AR_COMPLETION = COMPLETION_RELOAD_SERVICE auditd
+ # AR_TEST_ID = T0015518
+ # AR_TEST_NAME = '-a always,exit -F arch=b64 -S creat -S open -S
+# openat -S truncate -S ftruncate -F exit=-EACCES -F auid>=500 -F
+# auid!=4294967295 -k access' Option
+ # AR_FINAL_STEPS = To complete this remediation:
+ # AR_FINAL_STEPS = <ol><li>Become superuser or assume an equivalent
+# role.</li><li>Run the <b>/etc/init.d/auditd reload</b> command to
+# reload the filters.</li>
+ # AR_FINAL_STEPS = </ol>
+# Post Remediation Category Reload Configuration "auditd"
+# Post Remediation Steps To complete this remediation:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the /etc/init.d/auditd reload command to reload the filters.
+# Remediated Elements /etc/audit/audit.rules

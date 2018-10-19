@@ -1,0 +1,24 @@
+TestDesc="Status Severity Time Unique Account Name No Results 0"
+# Description This test verifies that each user is assigned a unique account name.
+# Unique account names are useful when trying to determine which user is associated with an
+# event, object or process.
+# Rules Verify the Integrity of the System Authentication Information
+# Element Equals "The System Authentication Information"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\ \t]*d
+# uplicate[\ \t]+password[\ \t]+entry[\ \t]*$/ (Flags:Multiline,Comments mode) Unique Account
+# Name Exception Does not exist
+# Remediation To remediate failure of this policy test, remove duplicated user names.
+# Removing duplicated user names:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run pwck -r /etc/passwd command to find duplicated user names in the /etc/pass
+# wd file.
+# 3. Open the /etc/passwd file.
+# 4. Remove duplicated user names and save the file.
+# For further details, please run the command man pwck to read man page.
+if [ `/usr/sbin/pwck -r /etc/passwd| egrep -i Duplicate|wc -l` -eq 0 ]; then
+	echo "Exerything ok - no Duplicate names found in /etc/passwd"
+else
+	echo "Failure - Duplicate names found in /etc/passwd"
+	echo "edit /etc/passwd and remove duplicates fround from running pwck -r /etc/passwd"
+	echo $?
+fi

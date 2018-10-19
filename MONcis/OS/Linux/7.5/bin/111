@@ -1,0 +1,27 @@
+TestDesc="Status Severity Time Verify That Unconfined Daemons Are Disabled No Results 0"
+# Description Daemons that are not defined in SELinux policy will inherit the security context of their parent
+# process. Since daemons are launched and descend from the init process, they will inherit the
+# security context label initrc_t. This could cause the unintended consequence of giving the pro
+# cess more permission than it requires.
+# Rules Get Unconfined Daemons
+# Element Equals "Get Unconfined Daemons"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /.+/
+# (Flags:Case insensitive) Unconfined Daemons Does not exist
+# Remediation To remediate failure of this policy test, check for unconfined daemons.
+# Checking for unconfined daemons:
+# 1. Perform the following to determine if unconfined daemons are running on the system:
+# ps -eZ | egrep "initrc" | egrep -vw "tr|ps|egrep|bash|awk"
+# 2. Investigate any unconfined daemons found in step 1.
+# 3. Using the following command to kill daemon process that you want to kill:
+# kill -9 <PID>
+# <PID> that is PID of process that list in second column in step 1.
+if [ `ps -eZ | egrep "initrc" | egrep -vw "tr|ps|egrep|bash|awk"| wc -l` -gt 0 ]; then
+	echo "Failure - we could have unconfined daemons"
+	echo "ps -eZ | egrep initrc | egrep -vw 'tr|ps|egrep|bash|awk'"
+	echo " Investigate any unconfined daemons found in step 1."
+	echo " Using Kill -9 PID command to kill daemon process that you want to kill:"
+	echo ""
+	exit $?
+else
+	echo "Everything ok - no unconfined processes found"
+fi

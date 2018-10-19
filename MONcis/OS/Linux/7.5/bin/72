@@ -1,0 +1,37 @@
+TestDesc="Verify That .forward Files Are Not Used"
+# No Results 0
+# Description This test verifies that .forward files are not used.
+# An attacker that gains access to a .forward file can turn the host into a spam producing sys
+# tem or hijack user email.
+# Rules User Dot Files
+# Element Equals "User Dot Files"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^.*/\.for
+# ward$/ (Flags:Multiline,Comments mode) .forward File Does not exist
+# Remediation To remediate failure of this policy test, remove the .forward files in the user home directories.
+# Removing the .forward files in the user home directories:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+#  Users=`/bin/egrep -v "^[[:space:]]*#|^[[:space:]]*$" /etc/passwd
+# 2>/dev/null | /bin/awk -F: '{ cmd = "/usr/bin/passwd -S " $1 " 2>/
+# dev/null"; cmd | getline UserInfo; if ($0 !~ /^[[:space:]]*(#.*|\+.*|
+# root|halt|sync|shutdown):/ && (UserInfo ~ /^[[:graph:]]+[[:spac
+# e:]]+PS[[:space:]]+/ || (UserInfo ~ /^[[:space:]]*Unknown[[:space:]
+# ]+user\./ && $2 != "!!")) && $7 !~ /^\/sbin\/nologin$/){ print $1 ":"
+# $6}}'`; SavedIFS="$IFS"; IFS=`/bin/echo -e "\n\b"`; for User in
+# $Users; do UserName=`/bin/echo "$User" | /bin/awk -F: '{print
+# $1}'`; HomeDirectory=`/bin/echo "$User" | /bin/awk -F: '{print $2}'`
+# ; /bin/ls -alL $HomeDirectory/.forward 2>/dev/null | awk '$1 !~ /^d/
+# { FileName=substr($0,index($0,"/")); print UserName, $1, $3, $4,
+# FileName}' UserName="$UserName"; done; IFS="$SavedIFS";
+# to list all .forward files.
+# 3. Remove .forward files found in step 2 using the rm -f <.forward_file_name> com
+# mand.
+# For further details, please run the command man rm to read man page.
+#!/bin/bash
+echo " Please remove the following .forward Files "
+Users=`/bin/egrep -v "^[[:space:]]*#|^[[:space:]]*$" /etc/passwd 2>/dev/null | /bin/awk -F: '{ cmd = "/usr/bin/passwd -S " $1 " 2>/dev/null"; cmd | getline UserInfo; if ($0 !~ /^[[:space:]]*(#.*|\+.*|root|halt|sync|shutdown):/ && (UserInfo ~ /^[[:graph:]]+[[:space:]]+PS[[:space:]]+/ || (UserInfo ~ /^[[:space:]]*Unknown[[:space:]]+user\./ && $2 != "!!")) && $7 !~ /^\/sbin\/nologin$/){ print $1 ":" $6}}'`; SavedIFS="$IFS"; IFS=`/bin/echo -e "\n\b"`; 
+for User in $Users; do 
+UserName=`/bin/echo "$User" | /bin/awk -F: '{print $1}'`; HomeDirectory=`/bin/echo "$User" | /bin/awk -F: '{print $2}'` ; 
+/bin/ls -alL $HomeDirectory/.forward 2>/dev/null | awk '$1 !~ /^d/ { FileName=substr($0,index($0,"/")); print UserName, $1, $3, $4, FileName}' UserName="$UserName"; 
+done; 
+IFS="$SavedIFS";

@@ -1,0 +1,40 @@
+TestDesc="Verify That Users Are Assigned Valid Home Directories"
+# Directories
+# No Results 0
+# Description The /etc/passwd file defines a home directory that the user is placed in upon login. If the user'
+# s home directory does not exist or is unassigned, the user will be placed in "/" and will not be
+# able to write any files or have local environment variables set.
+# Rules User Home Directories
+# Element Equals "User Home Directories"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^[\\t]*U
+# serName=(?!nfsnobody[\ \t])\S+[\ \t]+UserID=(?:[1-9]\d{3}|0*\d{5,})[\ \t]+(?:UserHome=[\ \t]+P
+# ermissions.*|.*HomeDirExisted=no)$/ (Flags:Multiline,Comments mode) User That Not Be As
+# signed Valid Home Directories Does not exist
+# Remediation To remediate failure of this policy test, assign valid home directory for all normal users.
+# Assigning valid home directory for all normal users:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the following command to list all user that not be a valid home directory:
+# Users=`/bin/cat /etc/passwd 2>/dev/null | /bin/egrep -v "^[[:space:]]*(#.*|\+.*|nfsnobody):" | /bin/awk -F: '$3 >=1000 {print}'`; 
+# SavedIFS="$IFS"; IFS=`/bin/echo -en "\n\b"`; for User in $Users; do UserName=`echo $User | /bin/awk -F: '{print $1}'`;
+# UserHome=`/bin/echo $User | /bin/awk -F: '{print $6}'`; if [ "$UserHome" != "/" ]; then if [ ! -d "$UserHome" ]; then /bin/echo $UserName ;
+# fi; fi; done; IFS="$SavedIFS"
+# 3. Run the usermod -d <home_directory> <user_name> command to assign a home
+# directory for users found in the step 2.
+#!/bin/bash
+SUCCESS="0"
+Users=`/bin/cat /etc/passwd 2>/dev/null | /bin/egrep -v "^[[:space:]]*(#.*|\+.*|nfsnobody):" | /bin/awk -F: '$3 >=1000 {print}'`; SavedIFS="$IFS"; IFS=`/bin/echo -en "\n\b"`; 
+for User in $Users; do 
+    UserName=`echo $User | /bin/awk -F: '{print $1}'`;UserHome=`/bin/echo $User | /bin/awk -F: '{print $6}'`; 
+    if [ "$UserHome" != "/" ]; then 
+       if [ ! -d "$UserHome" ]; then 
+          /bin/echo $UserName ; 
+          SUCCESS="1"
+       fi; 
+    fi; 
+done; 
+IFS="$SavedIFS"
+if [ "$SUCCESS" = "1" ]; then
+   echo "Please Verifiy and Create home directories for User Accounts listed above"
+else
+   echo " All User Accounts have home directories"
+fi

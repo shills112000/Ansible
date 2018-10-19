@@ -1,0 +1,84 @@
+TestDesc=" Verify That audit Logging Is Enabled to Log Execute Events Relating to the /sbin/rmmod File "
+# No Results 0
+# Description This test verifies that /etc/audit/audit.rules contains the '-w /sbin/rmmod -p x -k modules' op
+# tion.
+# It is important to maintain an audit trail in order to thoroughly track and analyze system activity
+# when something goes wrong.
+# Rules System Configuration Files
+# Element Equals "/etc/audit/audit.rules"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ ]*
+# -w[\ ]+/sbin/rmmod[\ ]+(?=.*-p[\ ]+x\b)(?=.*-k[\ ]+modules\b).*$/ (Flags:Multiline,Comments
+# mode) audit Line for Logging Execute Events Relating to the /sbin/rmmod File Exists
+# Remediation To remediate failure of this policy test, configure system to audit the loading and unloading of
+# kernel modules.
+# Configuring system to audit the loading and unloading of kernel modules on RHEL 5,
+# 6:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/audit.rules file.
+# 3. Find the line that contains the -w /sbin/rmmod -p x -k modules entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# Configuring system to audit the loading and unloading of kernel modules on RHEL 7:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/audit/rules.d/audit.rules file.
+# 3. Find the line that contains the -w /sbin/rmmod -p x -k modules entry.
+# 4. Uncomment that line or add if not found and save the file.
+# 5. Run the service auditd restart command to apply the change.
+# For further details, please run the command man auditctl to read man page.
+
+#!/bin/bash
+# initialize Variables
+File6="/etc/audit/audit.rules"
+File7="/etc/audit/rules.d/audit.rules"
+Release=`/bin/cat /etc/redhat-release |grep "release 7"`
+# Check OS version and set grub config file location
+if [ -n "$Release" ]; then
+# sets file for RHEL 7
+  echo "$Release"
+  File="$File7"
+else
+# sets file for RHEL 5 and 6
+  echo "Release 6"
+  File="$File6"
+fi
+# Backup the file before updating
+    if [ -e "$File" ]; then
+       BaseName=`/bin/basename "$File" 2>/dev/null`
+       DirName=`/usr/bin/dirname "$File" 2>/dev/null`
+       FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+       if [ ! -d "$FullPath" ]; then
+          CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+          if [ -n "$CreateLog" ]; then
+             /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+             exit 1003
+          fi
+     fi
+       BackupName="$FullPath/${BaseName}.tecopy"
+       CopyLog=`/bin/cp -f "$File" "$BackupName" 2>&1`
+       if [ -n "$CopyLog" ]; then
+          /bin/echo "FAILURE-1007: Could not backup [$File] file"
+          exit 1007
+       fi
+   else
+      /bin/echo FAILURE-1002: [$File] file/directory does not exist
+      exit 1002
+   fi
+#
+ Line="-w /sbin/rmmod -p x -k modules"
+SERelease=`/bin/cat "$File" |grep "\-w /sbin/rmmod \-p x \-k"`
+  if [ -n "$SERelease" ]; then
+     /bin/echo "Audit Logging Is Enabled to Log"
+     exit
+  else
+# Issue the command to add line to file
+    AddLog=`(/bin/echo "$Line" >> $File) 2>&1`
+    if [ -n "AddLog" ]; then
+       /bin/echo "SUCCESS-6003: [$Line] line added to [$File] file"
+       /bin/echo "restarting service to apply changes"
+       service auditd restart
+     exit 6003
+    fi
+   /bin/echo "FAILURE-6001: Could not add [$Line] line to [$File] file"
+  exit 6001
+fi
+

@@ -1,0 +1,75 @@
+TestDesc="Status Severity Time Verify /etc/hosts.deny Permissions No Results 0"
+# Description This test determines whether the root user owns the /etc/hosts.deny file which should be set
+# to 644 or more restrictive permissions. This setting supports system integrity and information
+# confidentiality by denying all hosts otherwise not listed in hosts.allow.
+# Rules System Configuration Files
+# Element Equals "/etc/hosts.deny"
+# Version conditions Action if missing:Pass User Matches "^root\s\(\d+\)\s*$" AND Group Matches "^root\s\(\d+
+# \)\s*$" AND Permissions Matches "^-..-.--.--.*"
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the /etc/
+# hosts.deny file.
+# Setting appropriate permissions and ownership on the /etc/hosts.deny file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Check the permissions and ownership of the file using the ls -lL /etc/hosts.deny
+# command.
+# 3. Change permissions to 644 or more restrictive using the chmod u-x,go-wx /etc/
+# hosts.deny command.
+# 4. Change ownership to root:root using the chown root:root /etc/hosts.deny com
+# mand.
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+# # Initialize Variables
+Perms="u-x,go-wx"
+PermsRegex="-..-.--.--"
+Owner="root"
+OwnersRegex="root"
+Group="root"
+GroupsRegex="root"
+FileName="/etc/hosts.deny"
+ExistingElement="Pass"
+FileEntry=$(/bin/ls -alLd $FileName 2>/dev/null | /bin/awk '$1 ~ /^-/ {print $1,$3,$4}')
+if [ -n "$FileEntry" ]; then
+if [ -n "$Owner" ]; then
+IsInvalid=`/bin/echo "$FileEntry" | /bin/awk '$2 !~ /^('$OwnersRegex')$/ {print}'`
+if [ -n "$IsInvalid" ]; then
+Permissions=$Owner
+OwnerLog=`(/bin/chown $Owner $FileName) 2>&1`
+fi
+fi
+if [ -n "$Group" ]; then
+IsInvalid=`/bin/echo "$FileEntry" | /bin/awk '$3 !~ /^('$GroupsRegex')$/ {print}'`
+if [ -n "$IsInvalid" ]; then
+Permissions=$Permissions":"$Group
+GroupLog=`(/bin/chgrp $Group $FileName) 2>&1`
+fi
+fi
+if [ -n "$Perms" ]; then
+#IsInvalid=`/bin/echo "$FileEntry" | /bin/awk '$1 !~ /^'$PermsRegex'$/ {print}'`
+IsInvalid=`/bin/echo "$FileEntry" | /usr/bin/sed -n -e '/^-..-.--.--.*/!p'`
+if [ -n "$IsInvalid" ]; then
+Permissions=$Perms`[ -z "$Permissions" ] || /bin/echo " "$Permissions`
+PermsLog=`(/bin/chmod $Perms $FileName) 2>&1`
+fi
+fi
+if [ -n "$PermsLog" -o -n "$OwnerLog" -o -n "$GroupLog" ]; then
+/bin/echo "FAILURE-1005: Could not apply permissions [$Permissions] to [$FileName] file/directory"
+exit 1005
+else
+/bin/echo "SUCCESS-1005: Permissions [$Permissions] applied to [$FileName] file/directory"
+fi
+else
+if [ "$ExistingElement" == "Pass" ]; then
+/bin/echo "SUCCESS-1002: [$FileName] file/directory does exist"
+else
+/bin/echo "FAILURE-1002: [$FileName] file/directory does exist"
+exit 1002
+fi
+fi
+exit 0
+# # AR_ACTION = RHEL_PERMISSIONS
+# # AR_COMPLETION = COMPLETION_NONE
+# # AR_TEST_ID = T0013665
+# # AR_TEST_NAME = Verify /etc/hosts.deny Permissions
+# Post Remediation Category None
+# Post Remediation Steps No additional Post Remediation steps
+# Remediated Elements None

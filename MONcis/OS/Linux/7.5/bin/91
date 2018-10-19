@@ -1,0 +1,36 @@
+TestDesc="Status Severity Time Verify That Default Login Shell for System Accounts Is Set to /sbin/nologin"
+# Description This test verifies that default login shell for system accounts is set to /sbin/nologin. It is impor
+# tant to make sure that accounts that are not being used by regular users are locked to prevent
+# them from being used to provide an interactive shell and it is also recommended that the shell
+# field in the password file be set to /sbin/nologin. This prevents the account from potentially be
+# ing used to run any commands.
+# Rules Block System Accounts
+# Element Equals "System Accounts"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /^User
+# name=(?!(?:sync|shutdown|halt)\b)\S+[\ \t]+Id=(?:\d{0,2}|[1-4]\d{2})[\ \t]+Shell=(?!/sbin/nolo
+# gin\b).*/ (Flags:Multiline,Comments mode) System Account Setting Deviation Does not exist
+# Remediation To remediate failure of this policy test, set default login shell for the system accounts to /sbin/
+# nologin.
+# Setting the default login shell for the system accounts to /sbin/nologin:
+# 1. Become superuser or assume an equivalent role.
+# 2. Run the script:
+# /bin/awk -F: '0+$3 < 500 && $1 !~ /^[[:space:]]*(#.*|root|sync|shut
+# down|halt|\+.*)$/ && $7 !~ /^\/sbin\/nologin$/ {print $1}' /etc/pass
+# wd 2>/dev/null
+# to list all the system accounts that do not have /sbin/nologin as the default login
+# shell.
+# 3. For each account listed in step 2, run command the usermod -s /sbin/nologin
+# <account_name> command to set default login shell for the account to /sbin/nolo
+# gin.
+# For further details, please run the command man usermod to read man page.
+ZERONUM=0
+ZEROUSR=""
+for ZEROUSR in `/bin/awk -F: '0+$3 < 500 && $1 !~ /^[[:space:]]*(#.*|root|sync|shutdown|halt|\+.*)$/ && $7 !~ /^\/sbin\/nologin$/ {print $1}' /etc/passwd`
+do
+        echo "Failure $ZEROUSR has a UID less than 500 but its shell is not set to /etc/nologin"
+        ZERONUM=`expr $ZERONUM + 1`
+done
+if [ $ZERONUM -lt 1 ]; then
+        echo "Everything ok - no UIDS are less than 500 for non system accounts"
+fi
+exit $ZERONUM

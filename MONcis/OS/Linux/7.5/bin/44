@@ -1,0 +1,29 @@
+TestDesc="Status Severity Time Verify /etc/cron.monthly Permissions No Results 0"
+# Description The /etc/cron.monthly directory contains system cron jobs that need to run on a weekly ba
+# sis. The files in this directory cannot be manipulated by the crontab command, but are instead
+# edited by system administrators using a text editor. The commands below restrict read/write
+# and search access to user and group root, preventing regular users from accessing this direc
+# tory.
+# Rules System Configuration Files
+# Element Equals "/etc/cron.monthly"
+# Version conditions Action if missing:Pass User Matches "^root[\ \t]+\(\d+\)[\ \t]*$" AND Group Matches "^root[\
+# \t]+\(\d+\)[\ \t]*$" AND Permissions Matches "^d.{3}-{6}.*$"
+# Remediation To remediate failure of this policy test, set appropriate permissions and ownership on the /etc/
+# cron.monthly directory.
+# Setting appropriate permissions and ownership on the /etc/cron.monthly directory:
+# 1. Become superuser or assume an equivalent role.
+# 2. Check the permissions and ownership of the file using the ls -ld /etc/cron.monthly
+# command.
+# 3. Change permissions to 700 or more restrictive using the chmod go-rwx /etc/cron.
+# monthly command.
+# 4. Change ownership to root:root using the chown root:root /etc/cron.monthly com
+# mand.
+if [ `ls -ld /etc/cron.monthly|sed -n -e '/^d.\{3\}-\{6\}\.[\ \t].*.[\ \t]root[\ \t]\+root[\ \t]\+[0-9]\+.*$/p'|wc -l` -eq 1 ]; then
+        echo "Everything ok - Perms, owner and group are set correct for /etc/cron.monthly"
+        exit 0
+else
+        echo "Failure - Perms, owner and group are incorrect for /etc/cron.monthly please rectify"
+        echo "chmod u-x,go-rwx /etc/cron.monthly "
+        echo "chown root:root /etc/cron.monthly"
+        echo $?
+fi

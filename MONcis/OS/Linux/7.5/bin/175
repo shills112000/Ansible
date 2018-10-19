@@ -1,0 +1,25 @@
+TestDesc="Status Severity Time Verify That the "Enforcing" Mode Is Not Disabled Using Grub Boot Loader No Results 0"
+# Description Enforcing is the default mode which will enable and enforce the SELinux security policy on the
+# Linux. It will also deny unauthorized access and log actions in a log file.
+# Rules System Configuration Files
+# Element Equals "/boot/grub2/grub.cfg"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*l
+# inux(?:\d+)?[\ \t]+.*\benforcing=0\b.*$/ (Flags:Multiline,Case insensitive,Comments mode) en
+# forcing Boot Time Disabled Setting Does not exist
+# Remediation To remediate failure of this policy test, enable enforcing in /etc/default/grub file.
+# Enabling enforcing in /etc/default/grub file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/default/grub file.
+# 3. Remove enforcing=0 parameter in the GRUB_CMDLINE_LINUX="parameter1 pa
+# rameter2 ..." line.
+# 4. Run grub2-mkconfig -o /boot/grub2/grub.cfg command to apply the change.
+if [ `/usr/bin/sed -n -e '/^[\ \t]linux.*.[\ \t]enforcing=0[\ \t].*$/p' /boot/grub2/grub.cfg |wc -l` -eq 0 ]; then
+        echo "everything is ok - enforcing is not enabled"
+else
+        echo "Failure - enforcing is enaled in grub"
+        echo "Open the /etc/default/grub"
+        echo "Remove enforcing=0 parameter in the GRUB_CMDLINE_LINUX=parameter1 parameter2 ... line."
+        echo "Run grub2-mkconfig -o /boot/grub2/grub.cfg "
+        exit $?
+fi
+exit 0

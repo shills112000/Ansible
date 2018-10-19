@@ -1,0 +1,24 @@
+TestDesc=" Status Severity Time Check for Duplicated Group Names No Results 0"
+# Description This test determines whether duplicated group names exist in the primary groups file. Unique
+# group names are useful when trying to determine which group is associated with an event, ob
+# ject or process.
+# Rules Duplicate Group Names in /etc/group
+# Element Equals "Duplicate Group Names in /etc/group"
+# Version conditions If an element version has no content, the condition should:Pass Regular expression: /.+/
+# (Flags:Case insensitive) Duplicate Group Names Does not exist
+# Remediation To remediate failure of this policy test, remove the duplicate group names in the /etc/group
+# file.
+# Removing the duplicate group names in the /etc/group file:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/group file.
+# 3. Find the duplicate group names.
+# 4. Remove one of the duplicate group names and save the file.
+# For further details, please run the command man gpasswd to read man page.
+if [ `awk -F: '{print $3}' /etc/group |sort|uniq -d|wc -l` -eq 0 ]; then
+	echo "Everything ok - no Duplicate GroupIDs found"
+	exit 0
+else
+	echo "failure Duplicate Groups IDs found"
+	for i in `/usr/bin/sed -e '/^$/d' /etc/group | awk -F: '{print $3}' |sort |uniq -d`; do awk -F: ' ( $3 == x ) { print $0,"this group ID is duplicated - please rectify" }  ' x=$i /etc/group; done
+	exit $?
+fi

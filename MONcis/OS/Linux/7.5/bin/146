@@ -1,0 +1,63 @@
+TestDesc=" Verify That gpgcheck Is Globally Activated "
+# No Results 0
+# Description The gpgcheck option, found in the main section of the /etc/yum.conf file determines if an RPM
+# package's signature is always checked prior to its installation. It is important to ensure that an
+# RPM's package signature is always checked prior to installation to ensure that the software is
+# obtained from a trusted source.
+# Rules System Configuration Files
+# Element Equals "/etc/yum.conf"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*g
+# pgcheck=0[\ \t]*$/ (Flags:Multiline,Case insensitive,Comments mode) gpgcheck Option Devia
+# tion Does not exist
+# Remediation To remediate failure of this policy test, set gpgcheck is globally activated.
+# Setting gpgcheck is globally activated:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/yum.conf file.
+# 3. Find the line gpgcheck=<value>.
+# 4. If found, then set <value> to 1 and save the file.
+# 5. If not found, then add the gpgcheck=1 line under [main] section in yum.conf file and
+# save it.
+# For further details, please run command man yum.conf to read the manual page.
+#!/bin/bash
+# initialize Variables
+FileName="/etc/yum.conf"
+ TempFile="yum_conf_tmp"
+ Line="gpgcheck=1"
+sline="main"
+Linec=`cat -n $FileName | grep "$sline" | awk '{print $1}'`
+#Linec=$(( $Linec +0 ))
+Linec=$(( $Linec + 0 ))
+if [ $Linec -eq 0 ]; then
+ Linec=1
+fi
+
+# # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+sed -i 's/gpgcheck=/#gpgcheck=/g' "$FileName"
+sed -e ''$Linec's/$/\n gpgcheck=1/' "$FileName" > "$TempFile"
+sed -i 's/ gpgcheck=1/gpgcheck=1/g' "$TempFile"
+/bin/cp -f "$TempFile" "$FileName" 2>&1
+/bin/echo "SUCCESS-6003: [$Line] line updated in [$FileName] file"
+# /bin/echo "restarting service to apply changes"
+# /usr/sbin/service auditd restart
+exit 6003

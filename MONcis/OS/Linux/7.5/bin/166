@@ -1,0 +1,66 @@
+TestDesc=" That rsyslog Is Configured to SendLogs to a Remote Log Host"
+# Logs to a Remote Log Host
+# No Results 0
+# Description This test verifies that rsyslogd is configured to send logs to a remote loghost.
+# Storing log data on a remote host protects log integrity from local attacks. If an attacker gains
+# root access on the local system, they could tamper with or remove log data that is stored on
+# the local system
+# Rules System Configuration Files
+# Element Equals "/etc/rsyslog.conf"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*
+# \*\.\*[\ \t]+(?:@|:omrelp:)\S+[\ \t]*(?:$|\#)/ (Flags:Multiline,Case insensitive,Comments mode)
+# Send Logs to a Remote Log Host Setting Exists
+# Remediation To remediate failure of this policy test, configure the /etc/rsyslog.conf file to send logs to a re
+# mote log host.
+# Configuring the /etc/rsyslog.conf file to send logs to a remote log host:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/rsyslog.conf file.
+# 3. Review the file:
+# • Add the following to the file if the system uses UDP for log message delivery:
+# *.* @[loghost.example.com]
+# • Add the following to the file if the system uses TCP for log message delivery:
+# *.* @@[loghost.example.com]
+# • Add the following to the file if the system uses RELP for log message delivery:
+# *.* :omrelp:[loghost.example.com]
+# where [loghost.example.com] is a remote log host.
+# 4. Run the service rsyslog restart command to apply changes.
+# For further details, please refer to:
+# http://www.rsyslog.com/doc/rsyslog_conf.html
+#!/bin/bash
+FileName="/etc/rsyslog.conf"
+UDPLine=`/bin/cat /etc/rsyslog.conf | grep "*.* @" `
+TCPLine=`/bin/cat /etc/rsyslog.conf | grep "*.* @@" `
+RELPLine=`/bin/cat /etc/rsyslog.conf | grep "omrelp" `
+
+echo " Review the [$FileName] file:"
+
+#check if the system uses TCP for log message delivery
+if [ -n "$TCPLine" ]; then 
+   echo "[$TCPLine] present in [$FileName]"
+   exit
+fi
+#check if the system uses UDP for log message delivery
+if [ -n "$UDPLine" ]; then
+   echo "[$UDPLine] present in [$FileName]"
+   exit
+fi
+#check if the system uses RELP for log message delivery
+if [ -n "$RELPLine" ]; then
+   echo "[$TCPLine] present in [$FileName]"
+   exit
+fi
+
+echo "Add the following to the file if the system uses UDP for log message delivery:
+ *.* @[loghost.example.com]
+ 
+Add the following to the file if the system uses TCP for log message delivery:
+ *.* @@[loghost.example.com]
+
+Add the following to the file if the system uses RELP for log message delivery:
+ *.* :omrelp:[loghost.example.com]
+
+where [loghost.example.com] is a remote log host.
+
+Run the service rsyslog restart command to apply changes."
+
+ 

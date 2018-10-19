@@ -1,0 +1,68 @@
+TestDesc="Status Severity Time Verify That ClientAliveInterval Is Set to 300 or Less and Greater than 0 No Results 0"
+# Description The two options ClientAliveInterval and ClientAliveCountMax control the timeout of ssh ses
+# sions. When the ClientAliveInterval variable is set, ssh sessions that have no activity for the
+# specified length of time are terminated. When the ClientAliveCountMax variable is set, sshd
+# will send client alive messages at every ClientAliveInterval interval. When the number of con
+# secutive client alive messages are sent with no response from the client, the ssh session is
+# terminated.
+# It is recommended that ClientAliveInterval is set to 300 (5 minutes) or less and greater than 0.
+# Rules System Configuration Files
+# Element Equals "/etc/ssh/sshd_config"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*C
+# lientAliveInterval[\ \t]+(\d+)[\ \t]*$/ (Flags:Multiline,Case insensitive,Comments mode) ClientAl
+# iveInterval Timeout Less than or equal 300 AND ClientAliveInterval Timeout Greater than 0
+# Remediation To remediate failure of this policy test, configure the SSH server to set a timeout interval in
+# seconds after which if no data has been received from the client equals to 300 or less and
+# greater than 0.
+# Configuring the SSH server to set a timeout interval in seconds after which if no data
+# has been received from the client equals to 300 or less and greater than 0:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/ssh/sshd_config file.
+# 3. Find the line ClientAliveInterval <value>.
+# 4. Set <value> to 300 or less and greater than 0 then save the file.
+# 5. Run the pkill -HUP sshd or /sbin/service sshd restart commands to restart the
+# sshd service.
+# For further details, please run the command man sshd_config to read man page.
+#!/bin/bash
+# initialize Variables
+ FileName="/etc/ssh/sshd_config"
+ TempFile="sshd_conf_tmp"
+ Line="ClientAliveInterval 300"
+sline="ClientAliveInterval"
+Linec=`cat -n $FileName | grep "$sline" | awk '{print $1}'`
+#Linec=$(( $Linec +0 ))
+Linec=$(( $Linec + 0 ))
+if [ $Linec -eq 0 ]; then
+ Linec=1
+fi
+
+# # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+     fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+        /bin/echo "FAILURE-1007: Could not backup [$FileName] file"
+        exit 1007
+    fi
+ else
+    /bin/echo FAILURE-1002: [$FileName] file/directory does not exist
+    exit 1002
+ fi
+sed -i 's/ClientAliveInterval/#ClientAliveInterval/g' "$FileName"
+sed -e ''$Linec's/$/\n ClientAliveInterval 300/' "$FileName" > "$TempFile"
+sed -i 's/ ClientAliveInterval 300/ClientAliveInterval 300/g' "$TempFile"
+/bin/cp -f "$TempFile" "$FileName" 2>&1
+/bin/echo "SUCCESS-6003: [$Line] line updated in [$FileName] file"
+/bin/echo "restarting service to apply changes"
+/sbin/service sshd restart
+exit 6003

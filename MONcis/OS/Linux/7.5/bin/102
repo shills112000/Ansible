@@ -1,0 +1,20 @@
+TestDesc=" Verify That Red Hat GPG Key Is Installed No Results 0"
+# Description Red Hat cryptographically signs updates with a GPG key to verify that they are valid. It is im
+# portant to ensure that updates are obtained from a valid source to protect against spoofing
+# that could lead to the inadvertent installation of malware on the system.
+# Rules Verify Red Hat GPG Key is Installed
+# Element Equals (case insensitive) "Verify Red Hat GPG Key is Installed"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /gpg.*
+# redhat.com.*/ (Flags:Case insensitive) Red Hat GPG Key Exists
+# Remediation To remediate failure of this policy test, install gpg-pubkey package. Installing the gpg-pubkey
+# package
+# 1. Become superuser or assume an equivalent role.
+# 2. Compare the GPG fingerprint with the one from Red Hat's web site at http://www.r
+# edhat.com/security/team/key.
+# 3. Run the rpm --import <GPG key file name> command to install the GPG, where
+# <GPG key file name> is file name of GPG downloaded from redhat site such as
+# RPM-GPG-KEY-redhat-release
+# For further details, please refer to: https://access.redhat.com/security/team/key
+#!/bin/bash
+echo " Server does not have direct access to the internet all files are updated from satellite server"
+exit 0 

@@ -1,0 +1,74 @@
+TestDesc=" Verify That Hard Core-dumps Are Disabled"
+# No Results 0
+# Description This test determines whether hard core-dump limits have been set to zero in /etc/securi
+# ty/limits.conf. This setting supports information confidentiality by preventing potentially sensi
+# tive information from being leaked to a core file on a hardware failure.
+# Rules System Configuration Files
+# Element Equals "/etc/security/limits.conf"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*\*[\
+# \t]+hard[\ \t]+core[\ \t]+0[\ \t]*(?:$|\#)/ (Flags:Multiline,Comments mode) Hard Core-dumps Set
+# ting Exists
+# Remediation To remediate failure of this policy test, set hard core to disable core dumps in order to prevent
+# the destruction of large amounts of disk space that may contain sensitive data.
+# Setting hard core to disable core dumps:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/security/limits.conf file.
+# 3. Find the lines * hard core <value> or add it to file (if not found).
+# 4. Set the <value> to 0 and save the file.
+# For further details, please run the command man limits.conf to read man page.
+#!/bin/bash
+# Command Line /bin/sh $(ScriptFile.sh)
+# Script # /bin/sh $(ScriptFile.sh)
+# # Initialize Variables
+ FileName="/etc/security/limits.conf"
+ ParameterName="*\t\thard\tcore\t\t"
+ Regex="\*[[:space:]]+hard[[:space:]]+core"
+ SeparateSymbol=" "
+ Value="0"
+ # Backup the file before updating
+ if [ -e "$FileName" ]; then
+    BaseName=`/bin/basename "$FileName" 2>/dev/null`
+    DirName=`/usr/bin/dirname "$FileName" 2>/dev/null`
+    FullPath="${TW_REMEDIATION_BACKUP_DIR}${DirName}"
+    if [ ! -d "$FullPath" ]; then
+       CreateLog=`/bin/mkdir -p "$FullPath" 2>&1`
+       if [ -n "$CreateLog" ]; then
+          /bin/echo -e "FAILURE-1003: Could not create [$FullPath] file/directory"
+          exit 1003
+       fi
+    fi
+    BackupName="$FullPath/${BaseName}.tecopy"
+    CopyLog=`/bin/cp -f "$FileName" "$BackupName" 2>&1`
+    if [ -n "$CopyLog" ]; then
+       /bin/echo -e "FAILURE-1007: Could not backup [$FileName] file"
+       exit 1007
+    fi
+ fi
+ # Issue the command to update the value of parameter
+ IsExisted=`/bin/awk -F"$SeparateSymbol" '$0 ~ /^[[:space:]]*'"$Regex"'[[:space:]]+/ {print}' "$FileName" 2>/dev/null`
+ if [ -n "$IsExisted" ]; then
+ UpdateLog=`(/bin/awk -F"$SeparateSymbol" \
+ '($0 ~ /^[[:space:]]*'"$Regex"'[[:space:]]/) {$0 = "'"$ParameterName"''"$SeparateSymbol"''"$Value"'"}{print}' "$BackupName" > "$FileName") 2>&1`
+# Rollback to the original file
+ if [ -n "$UpdateLog" ]; then
+    /bin/echo -e "FAILURE-4001: Could not change value of [$ParameterName] parameter to [$Value] in [$FileName] file"
+    /bin/cp -f "$BackupName" "$FileName" 2>/dev/null
+    exit 4001
+ fi
+  /bin/echo -e "SUCCESS-4001: Value of [$ParameterName] parameter changed to [$Value] in [$FileName] file"
+ else
+   AddLog=`(/bin/echo -e "${ParameterName}${SeparateSymbol}${Value}" >> "$FileName") 2>&1`
+   if [ -n "$AddLog" ]; then
+      /bin/echo -e "FAILURE-4002: Could not add [${ParameterName}${SeparateSymbol}${Value}] parameter to [$FileName] file"
+      exit 4002
+   fi
+   /bin/echo -e "SUCCESS-4002:[${ParameterName}${SeparateSymbol}${Value}] parameter added to [$FileName] file"
+ fi
+ exit 0
+ # AR_ACTION = RHEL_OTHERS
+ # AR_COMPLETION = COMPLETION_NONE
+ # AR_TEST_ID = T0013863
+ # AR_TEST_NAME = Verify That Hard Core-dumps Are Disabled
+# Post Remediation Category None
+# Post Remediation Steps No additional Post Remediation steps
+# Remediated Elements None

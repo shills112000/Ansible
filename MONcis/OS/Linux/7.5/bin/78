@@ -1,0 +1,31 @@
+TestDesc="Status Severity Time Verify That /dev/shm Partition Mounted with 'noexec' No Results 0"
+# Description Set noexec on the shared memory partition to prevent programs from executing from there
+# . Setting this option on a file system prevents users from executing programs from shared
+# memory. This deters users from introducing potentially malicious software on the system.
+# Rules File Systems Mounted
+# Element Equals "File Systems Mounted"
+# Version conditions If an element version has no content, the condition should:Fail Regular expression: /^[\ \t]*[
+# ^\#&&\S]+[\ \t]+on[\ \t]+/dev/shm[\ \t]+type[\ \t]+[^\#&&\S]+[\ \t]+\([^\#&&\S]*\bnoexec\b.*\).*$/
+# (Flags:Multiline,Comments mode) /dev/shm with noexec Option Exists
+# Remediation To remediate failure of this policy test, set noexec option for /dev/shm partition.
+# Setting noexec option for /dev/shm partition:
+# 1. Become superuser or assume an equivalent role.
+# 2. Open the /etc/fstab file.
+# 3. Find the line with options for /dev/shm.
+# 4. If not found, use the Logical Volume Manager (LVM) to create a separate partition for
+# /dev/shm, then go to step 5.
+# 5. If found, add the noexec option to the fourth field, using a comma to separate from
+# other options.
+# 6. Remount partition by using the mount -o remount,noexec /dev/shm command.
+# For further details, see the guidance on the Logical Volume Manager (LVM) for more informa
+# tion on repartitioning filesystems:
+# http://tldp.org/HOWTO/LVM-HOWTO/
+if [ `/usr/bin/mount | sed -n -e '/^.*.[\ \t]\/dev\/shm[\ \t]\+.*noexec.*$/p'| wc -l` -gt 0 ]; then
+        echo "everything ok - /dev\/shm is mounted with noexec option enabled"
+        exit 0
+else
+        echo "Failure - /dev\/shm is not  mounted with noexec option enabled"
+        echo " For further details, see the guidance on the Logical Volume Manager (LVM) for more information on repartitioning filesystems:"
+        echo " http://tldp.org/HOWTO/LVM-HOWTO/"
+        echo $?
+fi
