@@ -1,7 +1,7 @@
 [master]
 172.31.15.235 ansible_connection=local
 
-[ansible_prod]
+[webservers]
 172.31.14.18
 
 [loadbalancer]
