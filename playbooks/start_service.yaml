@@ -8,4 +8,7 @@
       state: present
 
   - name: ensure nginx is running
+    service: name=httpd state=stopped enabled=yes
+
+  - name: ensure http is running
     service: name=nginx state=started enabled=yes

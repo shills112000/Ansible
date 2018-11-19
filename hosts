@@ -6,3 +6,6 @@
 
 [loadbalancer]
 172.31.16.95
+
+[database]
+172.31.16.95

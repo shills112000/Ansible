@@ -1,0 +1,15 @@
+---
+# Bring stack down
+  - hosts: loadbalancer
+    become: true
+    tasks:
+      - service: name=nginx state=stopped
+      - service: name=httpd state=stopped
+      - service: name=mariadb state=stopped
+
+# Bring stackup
+  - hosts: loadbalancer
+    become: true
+    tasks:
+      - service: name=nginx state=started
+      - service: name=mariadb state=started
