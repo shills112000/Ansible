@@ -2,7 +2,7 @@
 - hosts: webservers
   become: true
   tasks:
-  - name: install the latest version of Nginx
-    yum:
-      name: nginx
-      state: absent
+  - name: install all web components
+    yum: 
+      name: ["nginx", "httpd"]
+      state: present

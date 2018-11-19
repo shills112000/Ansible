@@ -1,0 +1,11 @@
+---
+- hosts: loadbalancer
+  become: true
+  tasks:
+  - name: Install http and telnet
+    yum: 
+      name: ["httpd", "telnet"] 
+      state: present
+
+  - name: ensure nginx is running
+    service: name=nginx state=started enabled=yes

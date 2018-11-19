@@ -1,0 +1,11 @@
+---
+- hosts: master
+  become: true
+  tasks:
+  - name: Install curl
+    yum: 
+      name: 
+        - curl
+        - telnet
+        - wget
+      state: present
